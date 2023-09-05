@@ -1,0 +1,63 @@
+Metadata-Version: 2.1
+Name: htmltools
+Version: 0.3.0
+Summary: Tools for HTML generation and output.
+Home-page: https://github.com/rstudio/py-htmltools
+Author: Carson Sievert
+Author-email: carson@rstudio.com
+License: MIT
+Project-URL: Bug Tracker, https://github.com/rstudio/py-htmltools/issues
+Project-URL: Source Code, https://github.com/rstudio/py-htmltools
+Keywords: html
+Platform: any
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Text Processing :: Markup :: HTML
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: typing-extensions (>=3.10.0.0)
+Requires-Dist: packaging (>=20.9)
+Provides-Extra: dev
+Requires-Dist: black (>=23.1.0) ; extra == 'dev'
+Requires-Dist: flake8 (>=6.0.0) ; extra == 'dev'
+Requires-Dist: isort (>=5.11.2) ; extra == 'dev'
+Requires-Dist: pyright (>=1.1.284) ; extra == 'dev'
+Requires-Dist: pre-commit (>=2.15.0) ; extra == 'dev'
+Requires-Dist: snapshottest (>=0.6.0) ; extra == 'dev'
+Requires-Dist: wheel ; extra == 'dev'
+Provides-Extra: test
+Requires-Dist: pytest (>=6.2.4) ; extra == 'test'
+
+# htmltools
+
+Tools for creating, manipulating, and writing HTML from Python.
+
+## Installation
+
+```sh
+pip install htmltools
+```
+
+To install the latest development version from this repository:
+
+```sh
+pip install https://github.com/rstudio/py-htmltools/tarball/main
+```
+
+## Development
+
+If you want to do development on htmltools for Python:
+
+```sh
+pip install -e ".[dev,test]"
+```

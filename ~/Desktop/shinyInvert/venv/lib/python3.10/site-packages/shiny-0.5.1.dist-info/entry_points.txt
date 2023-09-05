@@ -1,0 +1,2 @@
+[console_scripts]
+shiny = shiny._main:main
