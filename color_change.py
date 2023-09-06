@@ -11,12 +11,19 @@ Returns:
 # Vectorized! much more faster
 import numpy as np
 
-def adjust_colors(img_array, color='white'):
+color_space = {'hsl':{'channel':1,'limit':1},
+               'lab':{'channel':0,'limit':'100'}}
+
+def adjust_colors(img_array, color='white', space='rgb'):
 
     color_map = {'white': [255, 255, 255], 'black': [0, 0, 0], 'grey': [123, 123, 123]}
-
-    # Find pixels where the difference between max and min channel value is <= 20
-    mask = np.abs(np.max(img_array, axis=-1) - np.min(img_array, axis=-1)) <= 20
+    if space == 'rgb':
+        # Find pixels where the difference between max and min channel value is <= 20
+        mask = np.abs(np.max(img_array, axis=-1) - np.min(img_array, axis=-1)) <= 20
+    elif space == 'hsl':
+        mask = ((img_array[..., 0] < 10) & (img_array[..., 2] < 10)) #| (img_array[..., 1] < 0.1) | (img_array[..., 1] > 0.9)
+    elif space == 'lab':
+        mask = (img_array[..., 1] < 8) & (img_array[..., 2] < 8)
 
     # Set those pixels to the desired color
     new_img_array = img_array.copy()

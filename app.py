@@ -8,7 +8,6 @@ from shiny.types import FileInfo, ImgData, SilentException
 from tohsl import rgb_to_hsl, hsl_to_rgb
 from color_change import adjust_colors
 
-
 app_ui = ui.page_fluid(
     ui.h2("Playing with invert"),
     ui.layout_sidebar(
@@ -20,10 +19,8 @@ app_ui = ui.page_fluid(
                     choices = {"demo1": "Example1", "demo2": "Example2"}),
             ui.input_radio_buttons('func', 'Functions',
                     choices = {"invert": "Invert", "bc": "Background color change"}),
+            ui.input_radio_buttons("cspace", "Color space",['hsl','lab','rgb']),
             ui.input_slider('gamma',"Gamma correctness",value=1, min=0, max=20,step=0.1),
-            ui.panel_conditional("input.func === 'invert'", 
-                    ui.input_radio_buttons("cspace", "Color space",['hsl','lab','rgb'])
-                    ),
             ui.panel_conditional("input.func === 'bc'", 
                     ui.input_selectize("bcolor", "Background color", 
                                        ['white', 'black', 'grey']) #'transparent'
@@ -65,7 +62,7 @@ def server(input, output, session):
                 # negative_image = (negative_lab_image * 255).astype(np.uint8)
                 negative_image = color.lab2rgb(negative_lab_image)
         elif input.func() == 'bc':
-            negative_image = adjust_colors(image_data, input.bcolor())
+            negative_image = adjust_colors(img_array=image_data, color=input.bcolor(),space=input.cspace())
 
         # Save for render.image
         negative_image = exposure.adjust_gamma(negative_image, gamma=input.gamma())
