@@ -8,6 +8,7 @@ from shiny.types import FileInfo, ImgData, SilentException
 from tohsl import rgb_to_hsl, hsl_to_rgb
 from color_change import adjust_colors
 
+
 app_ui = ui.page_fluid(
     ui.h2("Playing with invert"),
     ui.layout_sidebar(
@@ -15,10 +16,12 @@ app_ui = ui.page_fluid(
             ui.input_file("file", None, button_label="Upload image",
                 # This tells it to accept still photos only (not videos).
                 accept="image/*", capture="environment"),
+            ui.input_radio_buttons('demos', 'Examples',
+                    choices = {"demo1": "Example1", "demo2": "Example2"}),
             ui.input_radio_buttons('func', 'Functions',
                     choices = {"invert": "Invert", "bc": "Background color change"}),
             ui.panel_conditional("input.func === 'invert'", 
-                    ui.input_radio_buttons("cspace", "Color space",['rgb','hsl','lab'])
+                    ui.input_radio_buttons("cspace", "Color space",['hsl','lab','rgb'])
                     ),
             ui.panel_conditional("input.func === 'bc'", 
                     ui.input_selectize("bcolor", "Background color", 
@@ -37,7 +40,8 @@ def server(input, output, session):
     async def image() -> ImgData:
         file_infos: list[FileInfo] = input.file()
         if not file_infos:
-            image_data = io.imread('demo_input/oRGB.png')
+            path = f'demo_input/{input.demos()}.png'
+            image_data = io.imread(path)
             # raise SilentException()
         else:
             file_info = file_infos[0]
