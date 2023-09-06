@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from skimage import color, util, io
+from skimage import color, util, io, exposure
 # import colorsys
 from PIL import Image, ImageOps
 from shiny import App, render, ui
@@ -20,6 +20,7 @@ app_ui = ui.page_fluid(
                     choices = {"demo1": "Example1", "demo2": "Example2"}),
             ui.input_radio_buttons('func', 'Functions',
                     choices = {"invert": "Invert", "bc": "Background color change"}),
+            ui.input_slider('gamma',"Gamma correctness",value=1, min=0, max=20,step=0.1),
             ui.panel_conditional("input.func === 'invert'", 
                     ui.input_radio_buttons("cspace", "Color space",['hsl','lab','rgb'])
                     ),
@@ -67,6 +68,7 @@ def server(input, output, session):
             negative_image = adjust_colors(image_data, input.bcolor())
 
         # Save for render.image
+        negative_image = exposure.adjust_gamma(negative_image, gamma=input.gamma())
         io.imsave("test_results/inverted.png", util.img_as_ubyte(negative_image))
         print('run once')
         negative_image = io.imread('test_results/inverted.png')
