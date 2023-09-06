@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 from skimage import color, util, io
 # import colorsys
 from PIL import Image, ImageOps
@@ -55,17 +56,19 @@ def server(input, output, session):
             elif input.cspace() == "lab":
                 lab_image = color.rgb2lab(image_data)
                 negative_lab_image = lab_image.copy()
-                negative_lab_image[:, :, 0] = 100 - negative_lab_image[:, :, 0] # range✅
+                negative_lab_image[:, :, 0] = 100 - negative_lab_image[:, :, 0] 
                 # negative_image = (negative_lab_image * 255).astype(np.uint8)
                 negative_image = color.lab2rgb(negative_lab_image)
         elif input.func() == 'bc':
-            print(image_data[1,1,:])
             negative_image = adjust_colors(image_data, input.bcolor())
-            print(image_data[1,1,:])
 
         # Save for render.image
-        io.imsave("test_results/small.png", util.img_as_ubyte(negative_image))
-        return {"src": "test_results/small.png", "width": "100%"}
+        io.imsave("test_results/inverted.png", util.img_as_ubyte(negative_image))
+        print('run once')
+        negative_image = io.imread('test_results/inverted.png')
+        concatenated_image = cv2.hconcat([image_data,negative_image])
+        io.imsave("test_results/combin-inverted.png", util.img_as_ubyte(concatenated_image))
+        return {"src": "test_results/combin-inverted.png", "width": "100%"}
 
 
 app = App(app_ui, server)

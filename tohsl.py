@@ -5,7 +5,6 @@ def rgb_to_hsl(rgb_image):
     rgb_image = rgb_image.astype(float) / 255.0
     hsl_image = np.vectorize(colorsys.rgb_to_hls)(rgb_image[..., 0], rgb_image[..., 1], rgb_image[..., 2])
     hsl_image = np.stack(hsl_image, axis=-1)
-    print(hsl_image)
     return hsl_image
 
 def hsl_to_rgb(hsl_image):

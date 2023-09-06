@@ -19,9 +19,10 @@ def adjust_colors(img_array, color='white'):
     mask = np.abs(np.max(img_array, axis=-1) - np.min(img_array, axis=-1)) <= 20
 
     # Set those pixels to the desired color
-    img_array[mask] = color_map[color]
+    new_img_array = img_array.copy()
+    new_img_array[mask] = color_map[color]
 
-    return img_array
+    return new_img_array
 
 
 '''
