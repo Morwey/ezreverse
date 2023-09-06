@@ -50,12 +50,12 @@ def server(input, output, session):
             elif input.cspace() == "hsl": # OpenCV package
                 hsl_image = rgb_to_hsl(image_data)
                 negative_image = hsl_image.copy()
-                negative_image[:, :, 2] = 1 - negative_image[:, :, 2]
+                negative_image[:, :, 1] = 1 - negative_image[:, :, 1]
                 negative_image = hsl_to_rgb(negative_image)
             elif input.cspace() == "lab":
                 lab_image = color.rgb2lab(image_data)
                 negative_lab_image = lab_image.copy()
-                negative_lab_image[:, :, 0] = 100 - negative_lab_image[:, :, 0] # range
+                negative_lab_image[:, :, 0] = 100 - negative_lab_image[:, :, 0] # range✅
                 # negative_image = (negative_lab_image * 255).astype(np.uint8)
                 negative_image = color.lab2rgb(negative_lab_image)
         elif input.func() == 'bc':

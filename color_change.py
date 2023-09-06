@@ -1,6 +1,3 @@
-import numpy as np
-from skimage import io
-
 """
 Adjust pixels in an RGB image where the maximum difference between R, G, and B values is <= 5.
 
@@ -11,7 +8,23 @@ Returns:
 - np.array: The adjusted image array.
 """
 
-# need improve faster
+# Vectorized! much more faster
+import numpy as np
+
+def adjust_colors(img_array, color='white'):
+
+    color_map = {'white': [255, 255, 255], 'black': [0, 0, 0], 'grey': [123, 123, 123]}
+
+    # Find pixels where the difference between max and min channel value is <= 20
+    mask = np.abs(np.max(img_array, axis=-1) - np.min(img_array, axis=-1)) <= 20
+
+    # Set those pixels to the desired color
+    img_array[mask] = color_map[color]
+
+    return img_array
+
+
+'''
 def adjust_colors(img_array, color = 'white'):
 
     color_map = {'white':[255,255,255], 'black':[0,0,0], 'grey':[123,123,123]}
@@ -24,6 +37,8 @@ def adjust_colors(img_array, color = 'white'):
                 img_array[i, j] = color_map[color]
                 
     return img_array
+'''
+
 
 '''
 # Test the function
