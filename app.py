@@ -36,7 +36,7 @@ def server(input, output, session):
     async def image() -> ImgData:
         file_infos: list[FileInfo] = input.file()
         if not file_infos:
-            image_data = io.imread('./oRGB.png')
+            image_data = io.imread('demo_input/oRGB.png')
             # raise SilentException()
         else:
             file_info = file_infos[0]
@@ -64,8 +64,8 @@ def server(input, output, session):
             print(image_data[1,1,:])
 
         # Save for render.image
-        io.imsave("small.png", util.img_as_ubyte(negative_image))
-        return {"src": "small.png", "width": "100%"}
+        io.imsave("test_results/small.png", util.img_as_ubyte(negative_image))
+        return {"src": "test_results/small.png", "width": "100%"}
 
 
 app = App(app_ui, server)
