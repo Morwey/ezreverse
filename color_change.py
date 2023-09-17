@@ -14,12 +14,18 @@ import numpy as np
 color_space = {'hsl':{'channel':1,'limit':1},
                'lab':{'channel':0,'limit':'100'}}
 
-def adjust_colors(img_array, color='white', space='rgb'):
+def hex_to_rgb(hex_value):
+    hex_value = hex_value.lstrip('#')
+    return list(int(hex_value[i:i+2], 16) for i in (0, 2, 4))
+
+
+def adjust_colors(img_array, color='white', space='rgb',custom='#ffffff',threshold = 30):
 
     color_map = {'white': [255, 255, 255], 'black': [0, 0, 0], 'grey': [123, 123, 123]}
     if space == 'rgb':
         # Find pixels where the difference between max and min channel value is <= 20
-        mask = np.abs(np.max(img_array, axis=-1) - np.min(img_array, axis=-1)) <= 20
+        # mask = np.abs(np.max(img_array, axis=-1) - np.min(img_array, axis=-1)) <= 50
+        mask = np.std(img_array, axis=-1) <= threshold
     elif space == 'hsl':
         mask = ((img_array[..., 0] < 10) & (img_array[..., 2] < 10)) #| (img_array[..., 1] < 0.1) | (img_array[..., 1] > 0.9)
     elif space == 'lab':
@@ -27,9 +33,13 @@ def adjust_colors(img_array, color='white', space='rgb'):
 
     # Set those pixels to the desired color
     new_img_array = img_array.copy()
-    new_img_array[mask] = color_map[color]
+    if color == 'Hexadecimal RGB':
+        new_img_array[mask] = hex_to_rgb(custom)
+    else:
+        new_img_array[mask] = color_map[color]
 
     return new_img_array
+
 
 
 '''

@@ -1,12 +1,13 @@
 import numpy as np
-import cv2
+# import cv2 
 from skimage import color, util, io, exposure
 # import colorsys
 from PIL import Image, ImageOps
-from shiny import App, render, ui
+from shiny import App, render, ui, reactive
 from shiny.types import FileInfo, ImgData, SilentException
 from tohsl import rgb_to_hsl, hsl_to_rgb
 from color_change import adjust_colors
+import os
 
 app_ui = ui.page_fluid(
     ui.h2("Playing with invert"),
@@ -20,10 +21,12 @@ app_ui = ui.page_fluid(
             ui.input_radio_buttons('func', 'Functions',
                     choices = {"invert": "Invert", "bc": "Background color change"}),
             ui.input_radio_buttons("cspace", "Color space",['hsl','lab','rgb']),
-            ui.input_slider('gamma',"Gamma correctness",value=1, min=0, max=20,step=0.1),
+            ui.input_slider('gamma',"Gamma correctness",value=1, min=0, max=2,step=0.1),
+            ui.input_action_button("reset", "Reset"),
             ui.panel_conditional("input.func === 'bc'", 
                     ui.input_selectize("bcolor", "Background color", 
-                                       ['white', 'black', 'grey']) #'transparent'
+                                       ['white', 'black', 'grey']), #'transparent'
+                    ui.input_slider("threshold", "Threshold", value=10, min=0, max=20,step=1)
             ),
         ),
         ui.panel_main(
@@ -33,6 +36,14 @@ app_ui = ui.page_fluid(
 )
 
 def server(input, output, session):
+    gamma_value = reactive.Value(False)
+
+    @reactive.Effect
+    @reactive.event(input.reset)
+    def _():
+        gamma_value.set(True)
+        print('reset')
+
     @output
     @render.image
     async def image() -> ImgData:
@@ -62,15 +73,34 @@ def server(input, output, session):
                 # negative_image = (negative_lab_image * 255).astype(np.uint8)
                 negative_image = color.lab2rgb(negative_lab_image)
         elif input.func() == 'bc':
-            negative_image = adjust_colors(img_array=image_data, color=input.bcolor(),space=input.cspace())
+            negative_image = adjust_colors(img_array=image_data, 
+                                           color=input.bcolor(),space=input.cspace(),
+                                           threshold = input.threshold())
 
+        # print(gamma_value())
+        custom_gamma = input.gamma()
+        if gamma_value():
+            input.reset()
+            negative_image = exposure.adjust_gamma(negative_image, gamma=1)
+            with reactive.isolate():
+                    gamma_value.set(False)
+        else:
+            negative_image = exposure.adjust_gamma(negative_image, gamma=custom_gamma)                               
+        
         # Save for render.image
-        negative_image = exposure.adjust_gamma(negative_image, gamma=input.gamma())
+        
+        if not os.path.exists("test_results"):
+            os.makedirs("test_results")
         io.imsave("test_results/inverted.png", util.img_as_ubyte(negative_image))
         print('run once')
         negative_image = io.imread('test_results/inverted.png')
-        concatenated_image = cv2.hconcat([image_data,negative_image])
-        io.imsave("test_results/combin-inverted.png", util.img_as_ubyte(concatenated_image))
+        # concatenated_image = cv2.hconcat([image_data,negative_image]) 
+        height1, width1 = image_data.shape[:2]
+        height2, width2 = negative_image.shape[:2]
+        new_image_np = np.zeros((max(height1, height2), width1 + width2, 3), dtype=np.uint8)
+        new_image_np[:height1, :width1] = image_data
+        new_image_np[:height2, width1:] = negative_image
+        io.imsave("test_results/combin-inverted.png", util.img_as_ubyte(new_image_np))
         return {"src": "test_results/combin-inverted.png", "width": "100%"}
 
 
