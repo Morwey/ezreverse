@@ -13,9 +13,7 @@ app_ui = ui.page_fluid(
     ui.h2("Playing with invert"),
     ui.layout_sidebar(
         ui.panel_sidebar(
-            ui.input_file("file", None, button_label="Upload image",
-                # This tells it to accept still photos only (not videos).
-                accept="image/*", capture="environment"),
+            ui.input_file("file", "Choose a file to upload:", multiple=True),
             ui.input_radio_buttons('demos', 'Examples',
                     choices = {"demo1": "Example1", "demo2": "Example2"}),
             ui.input_radio_buttons('func', 'Functions',
@@ -26,7 +24,7 @@ app_ui = ui.page_fluid(
             ui.panel_conditional("input.func === 'bc'", 
                     ui.input_selectize("bcolor", "Background color", 
                                        ['white', 'black', 'grey']), #'transparent'
-                    ui.input_slider("threshold", "Threshold", value=10, min=0, max=20,step=1)
+                    ui.input_slider("threshold", "Threshold", value=10, min=0, max=20,step=0.5)
             ),
         ),
         ui.panel_main(

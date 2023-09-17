@@ -27,9 +27,14 @@ def adjust_colors(img_array, color='white', space='rgb',custom='#ffffff',thresho
         # mask = np.abs(np.max(img_array, axis=-1) - np.min(img_array, axis=-1)) <= 50
         mask = np.std(img_array, axis=-1) <= threshold
     elif space == 'hsl':
-        mask = ((img_array[..., 0] < 10) & (img_array[..., 2] < 10)) #| (img_array[..., 1] < 0.1) | (img_array[..., 1] > 0.9)
+        # mask = ((img_array[..., 0] < 10) & (img_array[..., 2] < 10)) #| (img_array[..., 1] < 0.1) | (img_array[..., 1] > 0.9)
+        # mask = (img_array[..., 2] < 0) | (img_array[..., 2] > 255) | ((img_array[..., 0] < 100)&(img_array[..., 1] <100))
+        mask = (img_array[..., 1] < 4) | (img_array[..., 1] > 253)
+        # print(np.max(img_array[..., 0]), np.min(img_array[..., 0])) all are 0,255
     elif space == 'lab':
-        mask = (img_array[..., 1] < 8) & (img_array[..., 2] < 8)
+        # mask = (img_array[..., 1] < 8) & (img_array[..., 2] < 8)
+        # subset = img_array[..., 1:3]; mask = np.std(subset, axis=-1) <= 1
+        mask = np.abs(img_array[..., 1] - img_array[..., 2]) <= threshold
 
     # Set those pixels to the desired color
     new_img_array = img_array.copy()
