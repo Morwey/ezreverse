@@ -5,7 +5,7 @@ from skimage import color, util, io, exposure
 from PIL import Image, ImageOps
 from shiny import App, render, ui, reactive
 from shiny.types import FileInfo, ImgData, SilentException
-from tohsl import rgb_to_hsl, hsl_to_rgb
+from tohsl import *
 from color_change import adjust_colors
 import os
 
@@ -13,13 +13,15 @@ app_ui = ui.page_fluid(
     ui.h2("Playing with invert"),
     ui.layout_sidebar(
         ui.panel_sidebar(
-            ui.input_file("file", "Choose a file to upload:", multiple=True),
             ui.input_radio_buttons('demos', 'Examples',
-                    choices = {"demo1": "Example1", "demo2": "Example2"}),
+                    choices = {"demo1": "Example1", "demo2": "Example2", "upload": "Upload image"}),
+            ui.panel_conditional("input.demos === 'upload'", 
+                    ui.input_file("file", "Choose a file to upload:", multiple=True),
+            ),
             ui.input_radio_buttons('func', 'Functions',
-                    choices = {"invert": "Invert", "bc": "Background color change"}),
-            ui.input_radio_buttons("cspace", "Color space",['hsl','lab','rgb']),
-            ui.input_slider('gamma',"Gamma correctness",value=1, min=0, max=2,step=0.1),
+                    choices = {"invert": "Invert", "bc": "Bacground color change"}),
+            ui.input_radio_buttons("cspace", "Color space",['hsl','lab','rgb','hsv','yiq']),
+            ui.input_slider('gamma',"Gamma correctness",value=1, min=0, max=5,step=0.1),
             ui.input_action_button("reset", "Reset"),
             ui.panel_conditional("input.func === 'bc'", 
                     ui.input_selectize("bcolor", "Background color", 
@@ -28,29 +30,51 @@ app_ui = ui.page_fluid(
             ),
         ),
         ui.panel_main(
+            ui.output_text("instruction"),
             ui.output_plot("image")
         )
     )
 )
 
 def server(input, output, session):
-    gamma_value = reactive.Value(False)
 
     @reactive.Effect
     @reactive.event(input.reset)
     def _():
-        gamma_value.set(True)
         print('reset')
+        ui.update_slider(
+            "gamma",
+            # label=f"Gamma correctness. Current value: {1}",
+            value=1,
+        )
+
+    @reactive.Effect
+    def _():
+        ui.update_slider(
+            "gamma",
+            label=f"Gamma correctness. Current value: {input.gamma()}",
+        )
+
+    @output
+    @render.text
+    def instruction():
+        if(input.demos() == 'upload'):
+            return "Please upload image"
+        else:
+            pass
+
 
     @output
     @render.image
     async def image() -> ImgData:
         file_infos: list[FileInfo] = input.file()
-        if not file_infos:
+        if input.demos() == 'demo1' or input.demos() == 'demo2':
             path = f'demo_input/{input.demos()}.png'
             image_data = io.imread(path)
             # raise SilentException()
         else:
+            if not file_infos:
+                return 
             file_info = file_infos[0]
             img = Image.open(file_info["datapath"])
             # Convert to numpy array for skimage processing
@@ -64,6 +88,16 @@ def server(input, output, session):
                 negative_image = hsl_image.copy()
                 negative_image[:, :, 1] = 1 - negative_image[:, :, 1]
                 negative_image = hsl_to_rgb(negative_image)
+            elif input.cspace() == "hsv":
+                hsv_image = rgb_to_hsv(image_data)
+                negative_image = hsv_image.copy()
+                negative_image[:, :, 0] = 1 - negative_image[:, :, 0]
+                negative_image = hsv_to_rgb(negative_image)
+            elif input.cspace() == "yiq":
+                yiq_image = rgb_to_yiq(image_data)
+                negative_image = yiq_image.copy()
+                negative_image[:, :, 0] = 1 - negative_image[:, :, 0]
+                negative_image = yiq_to_rgb(negative_image)
             elif input.cspace() == "lab":
                 lab_image = color.rgb2lab(image_data)
                 negative_lab_image = lab_image.copy()
@@ -75,15 +109,7 @@ def server(input, output, session):
                                            color=input.bcolor(),space=input.cspace(),
                                            threshold = input.threshold())
 
-        # print(gamma_value())
-        custom_gamma = input.gamma()
-        if gamma_value():
-            input.reset()
-            negative_image = exposure.adjust_gamma(negative_image, gamma=1)
-            with reactive.isolate():
-                    gamma_value.set(False)
-        else:
-            negative_image = exposure.adjust_gamma(negative_image, gamma=custom_gamma)                               
+        negative_image = exposure.adjust_gamma(negative_image, gamma=input.gamma())                               
         
         # Save for render.image
         
@@ -96,7 +122,7 @@ def server(input, output, session):
         height1, width1 = image_data.shape[:2]
         height2, width2 = negative_image.shape[:2]
         new_image_np = np.zeros((max(height1, height2), width1 + width2, 3), dtype=np.uint8)
-        new_image_np[:height1, :width1] = image_data
+        new_image_np[:height1, :width1] = image_data[:,:,:3]
         new_image_np[:height2, width1:] = negative_image
         io.imsave("test_results/combin-inverted.png", util.img_as_ubyte(new_image_np))
         return {"src": "test_results/combin-inverted.png", "width": "100%"}
