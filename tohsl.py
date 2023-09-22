@@ -1,9 +1,21 @@
 import numpy as np
 import colorsys
 
+def custom_rgb_to_hls(r, g, b):
+    sumc = r + g + b
+    print(sumc)
+    if sumc < 2.05 and sumc > 1.95:
+        return 0, 0.5, 0  
+    elif sumc == 0:
+        h, l, s = colorsys.rgb_to_hls(r, g, b)
+        s = 0
+    else:
+        h, l, s = colorsys.rgb_to_hls(r, g, b)
+        return h, l, s
+
 def rgb_to_hsl(rgb_image):
     rgb_image = rgb_image.astype(float) / 255.0
-    hsl_image = np.vectorize(colorsys.rgb_to_hls)(rgb_image[..., 0], rgb_image[..., 1], rgb_image[..., 2])
+    hsl_image = np.vectorize(custom_rgb_to_hls)(rgb_image[..., 0], rgb_image[..., 1], rgb_image[..., 2])
     hsl_image = np.stack(hsl_image, axis=-1)
     return hsl_image
 

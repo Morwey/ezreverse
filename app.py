@@ -8,6 +8,10 @@ from shiny.types import FileInfo, ImgData, SilentException
 from tohsl import *
 from color_change import adjust_colors
 import os
+from convolve import apply_kernel
+
+def ensure_non_negative(image):
+    return exposure.rescale_intensity(image, out_range=(0, 1))
 
 app_ui = ui.page_fluid(
     ui.h2("Playing with invert"),
@@ -20,6 +24,8 @@ app_ui = ui.page_fluid(
             ),
             ui.input_radio_buttons('func', 'Functions',
                     choices = {"invert": "Invert", "bc": "Bacground color change"}),
+            ui.input_radio_buttons('kernel', 'Convolve Kernel',
+                    choices={'none':'None', 'blur':'Blur', 'edge':'Edge detection', 'sharpen':'Sharpen'}),
             ui.input_radio_buttons("cspace", "Color space",['hsl','lab','rgb','hsv','yiq']),
             ui.input_slider('gamma',"Gamma correctness",value=1, min=0, max=5,step=0.1),
             ui.input_action_button("reset", "Reset"),
@@ -71,6 +77,7 @@ def server(input, output, session):
         if input.demos() == 'demo1' or input.demos() == 'demo2':
             path = f'demo_input/{input.demos()}.png'
             image_data = io.imread(path)
+            image_data = np.array(image_data)
             # raise SilentException()
         else:
             if not file_infos:
@@ -80,6 +87,9 @@ def server(input, output, session):
             # Convert to numpy array for skimage processing
             image_data = np.array(img)
 
+        if input.kernel() != 'none':
+            image_data = apply_kernel(image_data, input.kernel())
+            
         if input.func() == 'invert':
             if input.cspace() == "rgb":
                 negative_image = util.invert(image_data)
@@ -109,7 +119,7 @@ def server(input, output, session):
                                            color=input.bcolor(),space=input.cspace(),
                                            threshold = input.threshold())
 
-        negative_image = exposure.adjust_gamma(negative_image, gamma=input.gamma())                               
+        negative_image = exposure.adjust_gamma(ensure_non_negative(negative_image), gamma=input.gamma())                   
         
         # Save for render.image
         
