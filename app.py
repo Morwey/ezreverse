@@ -26,7 +26,7 @@ app_ui = ui.page_fluid(
                     choices = {"invert": "Invert", "bc": "Bacground color change"}),
             ui.input_radio_buttons('kernel', 'Convolve Kernel',
                     choices={'none':'None', 'blur':'Blur', 'edge':'Edge detection', 'sharpen':'Sharpen'}),
-            ui.input_radio_buttons("cspace", "Color space",['hsl','lab','rgb','hsv','yiq']),
+            ui.input_radio_buttons("cspace", "Color space",['yiq','lab','rgb','hsv','hsl']),
             ui.input_slider('gamma',"Gamma correctness",value=1, min=0, max=5,step=0.1),
             ui.input_action_button("reset", "Reset"),
             ui.panel_conditional("input.func === 'bc'", 
@@ -88,34 +88,37 @@ def server(input, output, session):
             image_data = np.array(img)
 
         if input.kernel() != 'none':
-            image_data = apply_kernel(image_data, input.kernel())
+            image_data_kernel = apply_kernel(image_data, input.kernel())
+        else:
+            image_data_kernel = image_data.copy()
             
         if input.func() == 'invert':
             if input.cspace() == "rgb":
-                negative_image = util.invert(image_data)
+                negative_image = util.invert(image_data_kernel = apply_kernel(image_data, input.kernel())
+)
             elif input.cspace() == "hsl": # OpenCV package
-                hsl_image = rgb_to_hsl(image_data)
+                hsl_image = rgb_to_hsl(image_data_kernel)
                 negative_image = hsl_image.copy()
                 negative_image[:, :, 1] = 1 - negative_image[:, :, 1]
                 negative_image = hsl_to_rgb(negative_image)
             elif input.cspace() == "hsv":
-                hsv_image = rgb_to_hsv(image_data)
+                hsv_image = rgb_to_hsv(image_data_kernel)
                 negative_image = hsv_image.copy()
                 negative_image[:, :, 0] = 1 - negative_image[:, :, 0]
                 negative_image = hsv_to_rgb(negative_image)
             elif input.cspace() == "yiq":
-                yiq_image = rgb_to_yiq(image_data)
+                yiq_image = rgb_to_yiq(image_data_kernel)
                 negative_image = yiq_image.copy()
                 negative_image[:, :, 0] = 1 - negative_image[:, :, 0]
                 negative_image = yiq_to_rgb(negative_image)
             elif input.cspace() == "lab":
-                lab_image = color.rgb2lab(image_data)
+                lab_image = color.rgb2lab(image_data_kernel)
                 negative_lab_image = lab_image.copy()
                 negative_lab_image[:, :, 0] = 100 - negative_lab_image[:, :, 0] 
                 # negative_image = (negative_lab_image * 255).astype(np.uint8)
                 negative_image = color.lab2rgb(negative_lab_image)
         elif input.func() == 'bc':
-            negative_image = adjust_colors(img_array=image_data, 
+            negative_image = adjust_colors(img_array=image_data_kernel, 
                                            color=input.bcolor(),space=input.cspace(),
                                            threshold = input.threshold())
 
