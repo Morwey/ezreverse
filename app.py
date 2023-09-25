@@ -168,9 +168,14 @@ def server(input, output, session):
         await asyncio.sleep(0.25)
         file_path = "test_results/inverted.png"
         img = io.imread(file_path)
+        pil_img = Image.fromarray((img * 255).astype(np.uint8))
+    
         img_byte_array = BytesIO()
+        pil_img.save(img_byte_array, format='PNG')
         
+        # Return byte stream
         yield img_byte_array.getvalue()
+        
     
 
 app = App(app_ui, server)
