@@ -1,4 +1,5 @@
 import numpy as np
+import asyncio
 # import cv2 
 from skimage import color, util, io, exposure
 # import colorsys
@@ -8,6 +9,7 @@ from shiny.types import FileInfo, ImgData, SilentException
 from ttohsl import *
 from color_change import adjust_colors
 import os
+from io import BytesIO
 from convolve import apply_kernel
 
 def ensure_non_negative(image):
@@ -41,6 +43,7 @@ app_ui = ui.page_fluid(
                                        ['white', 'black', 'grey']), #'transparent'
                     ui.input_slider("threshold", "Threshold", value=10, min=0, max=20,step=0.5)
             ),
+            ui.download_button('download', 'Export Image')
         ),
         ui.panel_main(
             ui.output_text("instruction"),
@@ -54,12 +57,20 @@ def server(input, output, session):
     @reactive.Effect
     @reactive.event(input.reset)
     def _():
-        print('reset')
+        # print('reset')
         ui.update_slider(
             "gamma",
             # label=f"Gamma correctness. Current value: {1}",
             value=1,
         )
+
+    @reactive.Effect
+    def _():
+        if input.cspace() == 'lab':
+            ui.update_radio_buttons("kernel",choices = {'none':'None'})
+        else:
+            ui.update_radio_buttons("kernel",
+                    choices = {'none':'None','blur':'Blur', 'edge':'Edge detection', 'sharpen':'Sharpen'})
 
     @reactive.Effect
     def _():
@@ -150,5 +161,16 @@ def server(input, output, session):
         io.imsave("test_results/combin-inverted.png", util.img_as_ubyte(new_image_np))
         return {"src": "test_results/combin-inverted.png", "width": "100%"}
 
+    @session.download(
+        filename=f"InvertImage.png"
+    )
+    async def download():
+        await asyncio.sleep(0.25)
+        file_path = "test_results/inverted.png"
+        img = io.imread(file_path)
+        img_byte_array = BytesIO()
+        
+        yield img_byte_array.getvalue()
+    
 
 app = App(app_ui, server)
