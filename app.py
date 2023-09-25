@@ -5,7 +5,7 @@ from skimage import color, util, io, exposure
 from PIL import Image, ImageOps
 from shiny import App, render, ui, reactive
 from shiny.types import FileInfo, ImgData, SilentException
-from tohsl import *
+from ttohsl import *
 from color_change import adjust_colors
 import os
 from convolve import apply_kernel
@@ -24,9 +24,16 @@ app_ui = ui.page_fluid(
             ),
             ui.input_radio_buttons('func', 'Functions',
                     choices = {"invert": "Invert", "bc": "Bacground color change"}),
+            ui.panel_conditional("input.func === 'bc'", 
+                ui.input_radio_buttons("bcspace", "Color space",choices=
+                                   {'rgb':'RGB'})),
+            ui.panel_conditional("input.func === 'invert'", 
+                ui.input_radio_buttons("cspace", "Color space",choices=
+                                   {'hls':'HLS',
+                                    'yiq':'YIQ', 
+                                    'lab':'CIElab'})),
             ui.input_radio_buttons('kernel', 'Convolve Kernel',
                     choices={'none':'None', 'blur':'Blur', 'edge':'Edge detection', 'sharpen':'Sharpen'}),
-            ui.input_radio_buttons("cspace", "Color space",['yiq','lab','rgb','hsv','hsl']),
             ui.input_slider('gamma',"Gamma correctness",value=1, min=0, max=5,step=0.1),
             ui.input_action_button("reset", "Reset"),
             ui.panel_conditional("input.func === 'bc'", 
@@ -87,6 +94,8 @@ def server(input, output, session):
             # Convert to numpy array for skimage processing
             image_data = np.array(img)
 
+        image_data = image_data[:, :, :3]
+
         if input.kernel() != 'none':
             image_data_kernel = apply_kernel(image_data, input.kernel())
         else:
@@ -94,13 +103,14 @@ def server(input, output, session):
             
         if input.func() == 'invert':
             if input.cspace() == "rgb":
-                negative_image = util.invert(image_data_kernel = apply_kernel(image_data, input.kernel())
-)
-            elif input.cspace() == "hsl": # OpenCV package
-                hsl_image = rgb_to_hsl(image_data_kernel)
-                negative_image = hsl_image.copy()
+                negative_image = util.invert(image_data_kernel)
+            elif input.cspace() == "hls": 
+                hls_image = rgb_to_hls(image_data_kernel)
+                negative_image = hls_image.copy()
                 negative_image[:, :, 1] = 1 - negative_image[:, :, 1]
-                negative_image = hsl_to_rgb(negative_image)
+                #print(np.max(negative_image),np.min(negative_image))
+                negative_image = hls_to_rgb(negative_image)
+                print(np.max(negative_image),np.min(negative_image))
             elif input.cspace() == "hsv":
                 hsv_image = rgb_to_hsv(image_data_kernel)
                 negative_image = hsv_image.copy()
@@ -119,7 +129,7 @@ def server(input, output, session):
                 negative_image = color.lab2rgb(negative_lab_image)
         elif input.func() == 'bc':
             negative_image = adjust_colors(img_array=image_data_kernel, 
-                                           color=input.bcolor(),space=input.cspace(),
+                                           color=input.bcolor(),space='rgb',
                                            threshold = input.threshold())
 
         negative_image = exposure.adjust_gamma(ensure_non_negative(negative_image), gamma=input.gamma())                   

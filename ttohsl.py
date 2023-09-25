@@ -1,32 +1,46 @@
 import numpy as np
 import colorsys
 
-def custom_rgb_to_hls(r, g, b):
-    sumc = r + g + b
-    if sumc < 2.05 and sumc > 1.95:
-        return 0, 0.5, 0  
-    elif sumc < 0.05 and sumc > -0.05:
-        return 0, 0, 0
+def cs_rgb_to_hls(r, g, b):
+    maxc = max(r, g, b)
+    minc = min(r, g, b)
+    sumc = (maxc+minc)
+    rangec = (maxc-minc)
+    l = sumc/2.0
+    if abs(sumc) < 1e-10:
+        return 0,0,0
+    if minc == maxc:
+        return 0.0, l, 0.0
+    if abs(2.0 - sumc) < 1e-10:  # checking if the value is almost zero
+        s = 0.0
+    elif l <= 0.5:
+        s = rangec / sumc
     else:
-        h, l, s = colorsys.rgb_to_hls(r, g, b)
-        return h, l, s
+        s = rangec / (2.0 - sumc)  # Not always 2.0-sumc: gh-106498.
+    rc = (maxc-r) / rangec
+    gc = (maxc-g) / rangec
+    bc = (maxc-b) / rangec
+    if r == maxc:
+        h = bc-gc
+    elif g == maxc:
+        h = 2.0+rc-bc
+    else:
+        h = 4.0+gc-rc
+    h = (h/6.0) % 1.0
+    return h, l, s
 
 def rgb_to_hls(rgb_image):
     rgb_image = rgb_image.astype(float) / 255.0
-    hls_image = np.vectorize(custom_rgb_to_hls)(rgb_image[..., 0], rgb_image[..., 1], rgb_image[..., 2])
+    hls_image = np.vectorize(cs_rgb_to_hls)(rgb_image[..., 0], rgb_image[..., 1], rgb_image[..., 2])
     hls_image = np.stack(hls_image, axis=-1)
     return hls_image
 
 def hls_to_rgb(hls_image):
-    print(np.max(hls_image),np.min(hls_image))
-    print(hls_image[300:500,300,:])
     rgb_converter = np.vectorize(colorsys.hls_to_rgb)
     r, g, b = rgb_converter(hls_image[..., 0], hls_image[..., 1], hls_image[..., 2])
     rgb_image = np.stack([r, g, b], axis=-1)
-    print(np.max(rgb_image),np.min(rgb_image))
 
     return (rgb_image * 255).astype(np.uint8) 
-
 
 def rgb_to_hsv(rgb_image):
     rgb_image = rgb_image.astype(float) / 255.0
