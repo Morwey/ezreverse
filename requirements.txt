@@ -2,5 +2,3 @@ scikit-image
 pillow
 shiny
 matplotlib
-io
-asyncio
