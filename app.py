@@ -11,6 +11,7 @@ from color_change import adjust_colors
 import os
 from io import BytesIO
 from convolve import apply_kernel
+import matplotlib.pyplot as plt
 
 def ensure_non_negative(image):
     return exposure.rescale_intensity(image, out_range=(0, 1))
@@ -40,9 +41,11 @@ app_ui = ui.page_fluid(
             ui.input_action_button("reset", "Reset"),
             ui.panel_conditional("input.func === 'bc'", 
                     ui.input_selectize("bcolor", "Background color", 
-                                       ['white', 'black', 'grey']), #'transparent'
+                                       ['white', 'black', 'grey','custom']), #'transparent'
                     ui.input_slider("threshold", "Threshold", value=10, min=0, max=20,step=0.5)
             ),
+            ui.panel_conditional("input.bcolor === 'custom'", 
+                                 ui.input_text('custom_bc','Custom Backgound Color')),
             ui.download_button('download', 'Export Image')
         ),
         ui.panel_main(
@@ -68,6 +71,8 @@ def server(input, output, session):
     def _():
         if input.cspace() == 'lab':
             ui.update_radio_buttons("kernel",choices = {'none':'None'})
+        elif input.bcspace() == 'rgb':
+            ui.update_radio_buttons("kernel",choices = {'none':'None','blur':'Blur'})
         else:
             ui.update_radio_buttons("kernel",
                     choices = {'none':'None','blur':'Blur', 'edge':'Edge detection', 'sharpen':'Sharpen'})
@@ -84,6 +89,8 @@ def server(input, output, session):
     def instruction():
         if(input.demos() == 'upload'):
             return "Please upload image"
+        elif input.custom_bc() == '':
+            return 'Please enter color'
         else:
             pass
 
@@ -121,7 +128,6 @@ def server(input, output, session):
                 negative_image[:, :, 1] = 1 - negative_image[:, :, 1]
                 #print(np.max(negative_image),np.min(negative_image))
                 negative_image = hls_to_rgb(negative_image)
-                print(np.max(negative_image),np.min(negative_image))
             elif input.cspace() == "hsv":
                 hsv_image = rgb_to_hsv(image_data_kernel)
                 negative_image = hsv_image.copy()
@@ -139,8 +145,18 @@ def server(input, output, session):
                 # negative_image = (negative_lab_image * 255).astype(np.uint8)
                 negative_image = color.lab2rgb(negative_lab_image)
         elif input.func() == 'bc':
-            negative_image = adjust_colors(img_array=image_data_kernel, 
-                                           color=input.bcolor(),space='rgb',
+            if input.bcolor() == 'custom':
+                # print(f'bs is {input.custom_bc()}')
+                if input.custom_bc() == '':
+                    return
+                else:
+                    negative_image = adjust_colors(img_array=image_data_kernel, 
+                                           color='Hexadecimal RGB',space='rgb',
+                                           threshold = input.threshold(),
+                                           custom = input.custom_bc())
+            else:
+                negative_image = adjust_colors(img_array=image_data_kernel, 
+                                           color='Hexadecimal RGB',space='rgb',
                                            threshold = input.threshold())
 
         negative_image = exposure.adjust_gamma(ensure_non_negative(negative_image), gamma=input.gamma())                   
@@ -168,7 +184,7 @@ def server(input, output, session):
         await asyncio.sleep(0.25)
         file_path = "test_results/inverted.png"
         img = io.imread(file_path)
-        pil_img = Image.fromarray((img * 255).astype(np.uint8))
+        pil_img = Image.fromarray(img.astype(np.uint8))
     
         img_byte_array = BytesIO()
         pil_img.save(img_byte_array, format='PNG')

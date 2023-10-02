@@ -3,9 +3,9 @@
         "server_url": "https://api.shinyapps.io",
         "filename": "/Users/songxinwei/Desktop/shiny",
         "app_url": "https://xinwei.shinyapps.io/invert-image1/",
-        "app_id": 9786226,
+        "app_id": 9893179,
         "app_guid": null,
-        "title": "Invert-Image",
+        "title": "image-invert",
         "app_mode": "python-shiny",
         "app_store_version": 1
     }

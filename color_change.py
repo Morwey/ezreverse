@@ -1,14 +1,3 @@
-"""
-Adjust pixels in an RGB image where the maximum difference between R, G, and B values is <= 5.
-
-Args:
-- img_array (np.array): A 3D numpy array representing an RGB image.
-
-Returns:
-- np.array: The adjusted image array.
-"""
-
-# Vectorized! much more faster
 import numpy as np
 
 color_space = {'hsl':{'channel':1,'limit':1},
@@ -18,6 +7,7 @@ def hex_to_rgb(hex_value):
     hex_value = hex_value.lstrip('#')
     return list(int(hex_value[i:i+2], 16) for i in (0, 2, 4))
 
+# Vectorized! much more faster
 
 def adjust_colors(img_array, color='white', space='rgb',custom='#ffffff',threshold = 30):
 
@@ -26,6 +16,8 @@ def adjust_colors(img_array, color='white', space='rgb',custom='#ffffff',thresho
         # Find pixels where the difference between max and min channel value is <= 20
         # mask = np.abs(np.max(img_array, axis=-1) - np.min(img_array, axis=-1)) <= 50
         mask = np.std(img_array, axis=-1) <= threshold
+
+    '''
     elif space == 'hsl':
         # mask = ((img_array[..., 0] < 10) & (img_array[..., 2] < 10)) #| (img_array[..., 1] < 0.1) | (img_array[..., 1] > 0.9)
         # mask = (img_array[..., 2] < 0) | (img_array[..., 2] > 255) | ((img_array[..., 0] < 100)&(img_array[..., 1] <100))
@@ -34,7 +26,7 @@ def adjust_colors(img_array, color='white', space='rgb',custom='#ffffff',thresho
     elif space == 'lab':
         # mask = (img_array[..., 1] < 8) & (img_array[..., 2] < 8)
         # subset = img_array[..., 1:3]; mask = np.std(subset, axis=-1) <= 1
-        mask = np.abs(img_array[..., 1] - img_array[..., 2]) <= threshold
+        mask = np.abs(img_array[..., 1] - img_array[..., 2]) <= threshold'''
 
     # Set those pixels to the desired color
     new_img_array = img_array.copy()
