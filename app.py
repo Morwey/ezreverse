@@ -148,12 +148,11 @@ def server(input, output, session):
             if input.bcolor() == 'custom' and not input.custom_bc():
                 return
 
-            # Set the color based on whether it's custom or not
             color_value = 'Hexadecimal RGB' if input.bcolor() == 'custom' else input.bcolor()
             custom_value = input.custom_bc() if input.bcolor() == 'custom' else None
 
             negative_image = adjust_colors(
-                img_array=input.threshold(),
+                img_array=image_data,
                 color=color_value,
                 space='rgb',
                 threshold=input.threshold(),
