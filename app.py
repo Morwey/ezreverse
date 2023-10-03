@@ -13,6 +13,24 @@ from io import BytesIO
 from convolve import apply_kernel
 import matplotlib.pyplot as plt
 
+def invert_hls(image_data):
+    hls_image = rgb_to_hls(image_data)
+    inverted_image = hls_image.copy()
+    inverted_image[:, :, 1] = 1 - inverted_image[:, :, 1]
+    return hls_to_rgb(inverted_image)
+
+def invert_yiq(image_data):
+    yiq_image = rgb_to_yiq(image_data)
+    negative_image = yiq_image.copy()
+    negative_image[:, :, 0] = 1 - negative_image[:, :, 0]
+    return yiq_to_rgb(negative_image)
+
+conversion_funcs = {
+    'rgb': util.invert,
+    'hls': invert_hls,
+    'yiq': invert_yiq,
+}
+
 def ensure_non_negative(image):
     return exposure.rescale_intensity(image, out_range=(0, 1))
 
@@ -118,46 +136,24 @@ def server(input, output, session):
             image_data_kernel = apply_kernel(image_data, input.kernel())
         else:
             image_data_kernel = image_data.copy()
-            
+
         if input.func() == 'invert':
-            if input.cspace() == "rgb":
-                negative_image = util.invert(image_data_kernel)
-            elif input.cspace() == "hls": 
-                hls_image = rgb_to_hls(image_data_kernel)
-                negative_image = hls_image.copy()
-                negative_image[:, :, 1] = 1 - negative_image[:, :, 1]
-                #print(np.max(negative_image),np.min(negative_image))
-                negative_image = hls_to_rgb(negative_image)
-            elif input.cspace() == "hsv":
-                hsv_image = rgb_to_hsv(image_data_kernel)
-                negative_image = hsv_image.copy()
-                negative_image[:, :, 0] = 1 - negative_image[:, :, 0]
-                negative_image = hsv_to_rgb(negative_image)
-            elif input.cspace() == "yiq":
-                yiq_image = rgb_to_yiq(image_data_kernel)
-                negative_image = yiq_image.copy()
-                negative_image[:, :, 0] = 1 - negative_image[:, :, 0]
-                negative_image = yiq_to_rgb(negative_image)
-            elif input.cspace() == "lab":
-                lab_image = color.rgb2lab(image_data_kernel)
-                negative_lab_image = lab_image.copy()
-                negative_lab_image[:, :, 0] = 100 - negative_lab_image[:, :, 0] 
-                # negative_image = (negative_lab_image * 255).astype(np.uint8)
-                negative_image = color.lab2rgb(negative_lab_image)
+            conversion_func = conversion_funcs.get(input.cspace(), None)
+            negative_image = conversion_func(image_data_kernel)
         elif input.func() == 'bc':
-            if input.bcolor() == 'custom':
-                # print(f'bs is {input.custom_bc()}')
-                if input.custom_bc() == '':
-                    return
-                else:
-                    negative_image = adjust_colors(img_array=image_data_kernel, 
-                                           color='Hexadecimal RGB',space='rgb',
-                                           threshold = input.threshold(),
-                                           custom = input.custom_bc())
-            else:
-                negative_image = adjust_colors(img_array=image_data_kernel, 
-                                           color=input.bcolor(),space='rgb',
-                                           threshold = input.threshold())
+            if input.bcolor() == 'custom' and not input.custom_bc():
+                return
+
+            # Set the color based on whether it's custom or not
+            color_value = 'Hexadecimal RGB' if input.bcolor() == 'custom' else input.bcolor()
+            custom_value = input.custom_bc() if input.bcolor() == 'custom' else None
+
+            negative_image = adjust_colors(
+                img_array=input.threshold(),
+                color=color_value,
+                space='rgb',
+                threshold=input.threshold(),
+                custom=custom_value)
 
         negative_image = exposure.adjust_gamma(ensure_non_negative(negative_image), gamma=input.gamma())                   
         
@@ -195,3 +191,5 @@ def server(input, output, session):
     
 
 app = App(app_ui, server)
+
+
