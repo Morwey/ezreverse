@@ -71,7 +71,7 @@ def server(input, output, session):
     def _():
         if input.cspace() == 'lab':
             ui.update_radio_buttons("kernel",choices = {'none':'None'})
-        elif input.bcspace() == 'rgb':
+        elif input.bcspace() == 'rgb' and input.func() == 'bc' or input.cspace() == 'hls':
             ui.update_radio_buttons("kernel",choices = {'none':'None','blur':'Blur'})
         else:
             ui.update_radio_buttons("kernel",
@@ -89,7 +89,7 @@ def server(input, output, session):
     def instruction():
         if(input.demos() == 'upload'):
             return "Please upload image"
-        elif input.custom_bc() == '':
+        elif input.bcolor() == 'custom' and input.custom_bc() == '':
             return 'Please enter color'
         else:
             pass
@@ -156,7 +156,7 @@ def server(input, output, session):
                                            custom = input.custom_bc())
             else:
                 negative_image = adjust_colors(img_array=image_data_kernel, 
-                                           color='Hexadecimal RGB',space='rgb',
+                                           color=input.bcolor(),space='rgb',
                                            threshold = input.threshold())
 
         negative_image = exposure.adjust_gamma(ensure_non_negative(negative_image), gamma=input.gamma())                   
