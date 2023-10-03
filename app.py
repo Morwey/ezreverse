@@ -25,10 +25,18 @@ def invert_yiq(image_data):
     negative_image[:, :, 0] = 1 - negative_image[:, :, 0]
     return yiq_to_rgb(negative_image)
 
+def invert_lab(image_data):
+    lab_image = color.rgb2lab(image_data)
+    negative_lab_image = lab_image.copy()
+    negative_lab_image[:, :, 0] = 100 - negative_lab_image[:, :, 0] 
+    # negative_image = (negative_lab_image * 255).astype(np.uint8)
+    return color.lab2rgb(negative_lab_image)
+
 conversion_funcs = {
     'rgb': util.invert,
     'hls': invert_hls,
     'yiq': invert_yiq,
+    'lab': invert_lab
 }
 
 def ensure_non_negative(image):
@@ -119,15 +127,11 @@ def server(input, output, session):
         file_infos: list[FileInfo] = input.file()
         if input.demos() == 'demo1' or input.demos() == 'demo2':
             path = f'demo_input/{input.demos()}.png'
-            image_data = io.imread(path)
-            image_data = np.array(image_data)
-            # raise SilentException()
+            image_data = np.array(io.imread(path))
         else:
             if not file_infos:
                 return 
-            file_info = file_infos[0]
-            img = Image.open(file_info["datapath"])
-            # Convert to numpy array for skimage processing
+            img = Image.open(file_infos[0]["datapath"])
             image_data = np.array(img)
 
         image_data = image_data[:, :, :3]
