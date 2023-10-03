@@ -28,10 +28,7 @@ Use the link below to download the **Shiny extension** for your VSCode. In the s
 
 [Shiny for python extension](https://marketplace.visualstudio.com/items?itemName=posit.shiny-python)
 
-<img src="file:///var/folders/0n/34k1_dz92mz91bw99965jzy40000gn/T/TemporaryItems/NSIRD_screencaptureui_yhRTlq/Screenshot%202023-10-02%20at%2010.30.50.png" title="" alt="Screenshot 2023-10-02 at 10.30.50.png" width="257">
-
 ##### 3.create an To deploy shiny in shinyapps.io
 
 Create an account via [shinyapps.io](https://www.shinyapps.io/)
 
-phasor plotter
