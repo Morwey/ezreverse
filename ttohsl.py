@@ -5,10 +5,10 @@ def cs_rgb_to_hls(r, g, b):
     maxc = max(r, g, b)
     minc = min(r, g, b)
     sumc = (maxc+minc)
-    rangec = (maxc-minc)
-    l = sumc/2.0
     if abs(sumc) < 1e-10:
         return 0,0,0
+    rangec = (maxc-minc)
+    l = sumc/2.0
     if minc == maxc:
         return 0.0, l, 0.0
     if abs(2.0 - sumc) < 1e-10:  # checking if the value is almost zero

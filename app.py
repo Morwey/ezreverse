@@ -1,36 +1,17 @@
 import numpy as np
 import asyncio
 # import cv2 
-from skimage import color, util, io, exposure
+from skimage import util, io, exposure
 # import colorsys
 from PIL import Image, ImageOps
 from shiny import App, render, ui, reactive
 from shiny.types import FileInfo, ImgData, SilentException
-from ttohsl import *
 from color_change import adjust_colors
 import os
 from io import BytesIO
 from convolve import apply_kernel
 import matplotlib.pyplot as plt
-
-def invert_hls(image_data):
-    hls_image = rgb_to_hls(image_data)
-    inverted_image = hls_image.copy()
-    inverted_image[:, :, 1] = 1 - inverted_image[:, :, 1]
-    return hls_to_rgb(inverted_image)
-
-def invert_yiq(image_data):
-    yiq_image = rgb_to_yiq(image_data)
-    negative_image = yiq_image.copy()
-    negative_image[:, :, 0] = 1 - negative_image[:, :, 0]
-    return yiq_to_rgb(negative_image)
-
-def invert_lab(image_data):
-    lab_image = color.rgb2lab(image_data)
-    negative_lab_image = lab_image.copy()
-    negative_lab_image[:, :, 0] = 100 - negative_lab_image[:, :, 0] 
-    # negative_image = (negative_lab_image * 255).astype(np.uint8)
-    return color.lab2rgb(negative_lab_image)
+from invert import *
 
 conversion_funcs = {
     'rgb': util.invert,
@@ -113,25 +94,28 @@ def server(input, output, session):
     @output
     @render.text
     def instruction():
-        if(input.demos() == 'upload'):
+        if input.demos() == 'upload' and not input.file():
             return "Please upload image"
         elif input.bcolor() == 'custom' and input.custom_bc() == '':
             return 'Please enter color'
         else:
             pass
 
-
-    @output
-    @render.image
-    async def image() -> ImgData:
-        file_infos: list[FileInfo] = input.file()
+    @reactive.Calc
+    def upload():
+        file_infos = input.file()
+        img = Image.open(file_infos[0]["datapath"])
+        print('upload one time')
+        return img
+    
+    @reactive.Calc
+    def invert():
+        global image_data
         if input.demos() == 'demo1' or input.demos() == 'demo2':
             path = f'demo_input/{input.demos()}.png'
             image_data = np.array(io.imread(path))
         else:
-            if not file_infos:
-                return 
-            img = Image.open(file_infos[0]["datapath"])
+            img = upload()
             image_data = np.array(img)
 
         image_data = image_data[:, :, :3]
@@ -145,27 +129,37 @@ def server(input, output, session):
             conversion_func = conversion_funcs.get(input.cspace(), None)
             negative_image = conversion_func(image_data_kernel)
         elif input.func() == 'bc':
-            if input.bcolor() == 'custom' and not input.custom_bc():
-                return
-
             color_value = 'Hexadecimal RGB' if input.bcolor() == 'custom' else input.bcolor()
             custom_value = input.custom_bc() if input.bcolor() == 'custom' else None
 
             negative_image = adjust_colors(
-                img_array=image_data,
+                img_array=image_data_kernel,
                 color=color_value,
                 space='rgb',
                 threshold=input.threshold(),
                 custom=custom_value)
-
-        negative_image = exposure.adjust_gamma(ensure_non_negative(negative_image), gamma=input.gamma())                   
         
+        print('run one time')
+        return negative_image
+
+
+    @output
+    @render.image
+    async def image() -> ImgData:
+        if input.bcolor() == 'custom' and not input.custom_bc():
+            return
+        if input.file() or input.demos() != 'upload':
+            negative_image = invert()
+        else:
+            return
+
+        negative_image = exposure.adjust_gamma(ensure_non_negative(negative_image), gamma=input.gamma())
+
         # Save for render.image
         
         if not os.path.exists("test_results"):
             os.makedirs("test_results")
         io.imsave("test_results/inverted.png", util.img_as_ubyte(negative_image))
-        print('run once')
         negative_image = io.imread('test_results/inverted.png')
         # concatenated_image = cv2.hconcat([image_data,negative_image]) 
         height1, width1 = image_data.shape[:2]
