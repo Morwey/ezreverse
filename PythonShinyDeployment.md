@@ -6,9 +6,7 @@ Here is a brief manuel for Python shiny app deployment
 
 To better visualize and check in real-time, it's recommended to download the Shiny extension for **VScode**.
 
-Use the link below to download the **Shiny extension** for your VScode. In the sidebar of VScode you can turn it on and off.
-
-[Shiny for python extension](https://marketplace.visualstudio.com/items?itemName=posit.shiny-python)
+Use this link below to download the **Shiny extension** for your VScode. In the sidebar of VScode you can turn it on and off.[Shiny for python extension](https://marketplace.visualstudio.com/items?itemName=posit.shiny-python)
 
 #### 2. Installing Shiny for python and build basic shiny app
 
