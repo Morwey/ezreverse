@@ -2,7 +2,7 @@ Here is a brief manuel for Python shiny app deployment
 
 ### Deploy to shinyapps.io (cloud hosting)
 
-##### 1. Download VScode and Shiny for Python extension
+#### 1. Download VScode and Shiny for Python extension
 
 To better visualize and check in real-time, it's recommended to download the Shiny extension for **VScode**.
 
@@ -10,7 +10,7 @@ Use the link below to download the **Shiny extension** for your VScode. In the s
 
 [Shiny for python extension](https://marketplace.visualstudio.com/items?itemName=posit.shiny-python)
 
-##### 2. Installing Shiny for python and build basic shiny app
+#### 2. Installing Shiny for python and build basic shiny app
 
 First create a new directory for your first Shiny app, and change to it.
 
@@ -44,12 +44,9 @@ shiny run --reload
 ```
 
 Then, launch the `app.py` file you created, using VS Code with the Shiny extension activated. This will open a subpage for your app, facilitating simultaneous coding and checking.
-
---- 
-
 *Check this link for more information: [Shiny for Python - Installing Shiny for Python](https://shiny.posit.co/py/docs/install.html)*
 
-##### 3.create an account and deploy shiny in shinyapps.io
+#### 3.create an account and deploy shiny in shinyapps.io
 
 First, Create an account via [shinyapps.io](https://www.shinyapps.io/)
 
