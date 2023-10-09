@@ -44,6 +44,7 @@ shiny run --reload
 ```
 
 Then, launch the `app.py` file you created, using VS Code with the Shiny extension activated. This will open a subpage for your app, facilitating simultaneous coding and checking.
+
 *Check this link for more information: [Shiny for Python - Installing Shiny for Python](https://shiny.posit.co/py/docs/install.html)*
 
 #### 3.create an account and deploy shiny in shinyapps.io
