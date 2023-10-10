@@ -6,12 +6,12 @@ from skimage import util, io, exposure
 from PIL import Image, ImageOps
 from shiny import App, render, ui, reactive
 from shiny.types import FileInfo, ImgData, SilentException
-from color_change import adjust_colors
+from modules.color_change import adjust_colors
 import os
 from io import BytesIO
-from convolve import apply_kernel
+from modules.convolve import apply_kernel
 import matplotlib.pyplot as plt
-from invert import *
+from modules.invert import *
 
 conversion_funcs = {
     'rgb': util.invert,

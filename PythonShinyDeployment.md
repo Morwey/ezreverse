@@ -59,5 +59,4 @@ pip install rsconnect-python
 rsconnect add --account <ACCOUNT> --name <NAME> --token <TOKEN> --secret <SECRET>
 rsconnect deploy shiny /path/to/app --name <NAME> --title my-app
 ```
-
-
+Please remember to create a `requirements.txt` file that includes all the necessary packages.
