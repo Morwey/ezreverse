@@ -43,7 +43,7 @@ app_ui = ui.page_fluid(
     ),
     ui.img(src="logo.png", style="width: 13%;"),
     ui.page_navbar(
-        # shinyswatch.theme.journal(),
+        shinyswatch.theme.journal(),
         ui.nav('App',
             ui.layout_sidebar(
                 ui.panel_sidebar(
@@ -98,7 +98,8 @@ app_ui = ui.page_fluid(
 
             Visit [here](https://amsterdamstudygroup.shinyapps.io/invertimage/) to use the tool online.
             """
-            ))
+            )),
+            title='EZreverse'
             )
     )
 
