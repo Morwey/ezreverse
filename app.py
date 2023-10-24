@@ -22,6 +22,8 @@ conversion_funcs = {
     'yiq': invert_yiq,
     'lab': invert_lab
 }
+path_invert = "test_results/inverted.png"
+path_ori = "test_results/ori.png"
 
 def ensure_non_negative(image):
     return exposure.rescale_intensity(image, out_range=(0, 1))
@@ -41,7 +43,7 @@ app_ui = ui.page_fluid(
     ),
     ui.img(src="logo.png", style="width: 13%;"),
     ui.page_navbar(
-        shinyswatch.theme.journal(),
+        # shinyswatch.theme.journal(),
         ui.nav('App',
             ui.layout_sidebar(
                 ui.panel_sidebar(
@@ -68,7 +70,7 @@ app_ui = ui.page_fluid(
                             ui.input_slider("threshold", "Threshold", value=10, min=0, max=20,step=0.5)
                     ),
                     ui.panel_conditional("input.bcolor === 'custom'", 
-                                        ui.input_text('custom_bc','Custom Backgound Color'))
+                                        ui.input_text('custom_bc','Custom Backgound Color')),
                 ),
                 ui.panel_main(
                     ui.download_button('download', 'Export Image'),
@@ -96,7 +98,7 @@ app_ui = ui.page_fluid(
 
             Visit [here](https://amsterdamstudygroup.shinyapps.io/invertimage/) to use the tool online.
             """
-            )),title="EZreverse",
+            ))
             )
     )
 
@@ -142,19 +144,21 @@ def server(input, output, session):
             return f'Reversed image:'
 
     @reactive.Calc
-    def upload():
+    def up():
+        global path
         file_infos = input.file()
-        img = Image.open(file_infos[0]["datapath"])
+        path = file_infos[0]["datapath"]
+        img = Image.open(path)
         print('upload one time')
         return img
     
     @reactive.Calc
-    def upload():
+    def read():
         if input.demos() == 'demo1' or input.demos() == 'demo2':
             path = f'demo_input/{input.demos()}.png'
             image_data = np.array(io.imread(path))
         else:
-            img = upload()
+            img = up()
             image_data = np.array(img)
 
         image_data = image_data[:, :, :3]
@@ -162,7 +166,7 @@ def server(input, output, session):
     
     @reactive.Calc
     def invert():
-        image_data = upload()
+        image_data = read()
 
         if input.kernel() != 'none':
             image_data_kernel = apply_kernel(image_data, input.kernel())
@@ -198,11 +202,10 @@ def server(input, output, session):
 
         negative_image = exposure.adjust_gamma(ensure_non_negative(negative_image), gamma=input.gamma())
         
-        if not os.path.exists("test_results"):
-            os.makedirs("test_results")
         io.imsave("test_results/inverted.png", util.img_as_ubyte(negative_image))
-        negative_image = io.imread('test_results/inverted.png')
-        return {"src": 'test_results/inverted.png',"width": "100%"} #"width": "100%"
+        negative_image = io.imread(path_invert)
+        return {"src": path_invert,"width": "100%"} #"width": "100%"
+    
     @output
     @render.text
     def instruori():
@@ -213,13 +216,18 @@ def server(input, output, session):
         else:
             return 'Original image:'
         
-    
     @output
     @render.image
     def ori():
-        image_data = upload()
-        io.imsave("test_results/ori.png", util.img_as_ubyte(image_data))
-        return {"src": "test_results/ori.png","width": "100%"} #, "width": "100%"
+        if input.bcolor() == 'custom' and not input.custom_bc():
+            return
+        if input.file() or input.demos() != 'upload':
+            image_data = read()
+        else:
+            return
+        with reactive.isolate():
+            io.imsave(path_ori, util.img_as_ubyte(image_data))
+        return {"src": path_ori,"width": "100%"} #, "width": "100%"
 
     @session.download(
         filename=f"InvertImage.png"
