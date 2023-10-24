@@ -5,7 +5,7 @@
         "app_url": "https://amsterdamstudygroup.shinyapps.io/invertimage/",
         "app_id": 10067167,
         "app_guid": null,
-        "title": "InvertImage",
+        "title": "invertimage",
         "app_mode": "python-shiny",
         "app_store_version": 1
     }

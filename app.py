@@ -12,6 +12,9 @@ from io import BytesIO
 from modules.convolve import apply_kernel
 import matplotlib.pyplot as plt
 from modules.invert import *
+from htmltools import Tag
+from pathlib import Path
+import shinyswatch
 
 conversion_funcs = {
     'rgb': util.invert,
@@ -24,43 +27,79 @@ def ensure_non_negative(image):
     return exposure.rescale_intensity(image, out_range=(0, 1))
 
 app_ui = ui.page_fluid(
-    ui.h2("Playing with invert"),
-    ui.layout_sidebar(
-        ui.panel_sidebar(
-            ui.input_radio_buttons('demos', 'Examples',
-                    choices = {"demo1": "Example1", "demo2": "Example2", "upload": "Upload image"}),
-            ui.panel_conditional("input.demos === 'upload'", 
-                    ui.input_file("file", "Choose a file to upload:", multiple=True),
+    ui.tags.style(
+        """
+        .app-col {
+            border: 1px solid black;
+            border-radius: 5px;
+            background-color: #EEF0F2; 
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+        """
+    ),
+    ui.img(src="logo.png", style="width: 13%;"),
+    ui.page_navbar(
+        shinyswatch.theme.journal(),
+        ui.nav('App',
+            ui.layout_sidebar(
+                ui.panel_sidebar(
+                    ui.input_radio_buttons('demos', 'Examples',
+                            choices = {"demo1": "Example1", "demo2": "Example2", "upload": "Upload image"}),
+                    ui.panel_conditional("input.demos === 'upload'", 
+                            ui.input_file("file", "Choose a file to upload:", multiple=True),
+                    ),
+                    ui.input_radio_buttons('func', 'Functions',
+                            choices = {"invert": "Invert", "bc": "Bacground color change"}),
+                    ui.panel_conditional("input.func === 'invert'", 
+                        ui.input_radio_buttons("cspace", "Color space",choices=
+                                        {'hls':'HLS',
+                                            'yiq':'YIQ', 
+                                            'lab':'CIElab',
+                                            'rgb':'RGB'})),
+                    ui.input_radio_buttons('kernel', 'Convolve Kernel',
+                            choices={'none':'None', 'blur':'Blur', 'edge':'Edge detection', 'sharpen':'Sharpen'}),
+                    ui.input_slider('gamma',"Gamma correctness",value=1, min=0, max=5,step=0.1),
+                    ui.input_action_button("reset", "Reset"),
+                    ui.panel_conditional("input.func === 'bc'", 
+                            ui.input_selectize("bcolor", "Background color", 
+                                            ['white', 'black', 'grey','custom']), #'transparent'
+                            ui.input_slider("threshold", "Threshold", value=10, min=0, max=20,step=0.5)
+                    ),
+                    ui.panel_conditional("input.bcolor === 'custom'", 
+                                        ui.input_text('custom_bc','Custom Backgound Color'))
+                ),
+                ui.panel_main(
+                    ui.download_button('download', 'Export Image'),
+                    ui.row(
+                        ui.column(6,ui.div({"class": "app-col"},
+                                ui.output_text("instruction"),
+                                ui.output_plot("image"))),
+                        ui.column(6,ui.div({"class": "app-col"},
+                                ui.output_text("instruori"),
+                                ui.output_plot('ori')))
+                                ))
+                )
             ),
-            ui.input_radio_buttons('func', 'Functions',
-                    choices = {"invert": "Invert", "bc": "Bacground color change"}),
-            ui.panel_conditional("input.func === 'bc'", 
-                ui.input_radio_buttons("bcspace", "Color space",choices=
-                                   {'rgb':'RGB'})),
-            ui.panel_conditional("input.func === 'invert'", 
-                ui.input_radio_buttons("cspace", "Color space",choices=
-                                   {'hls':'HLS',
-                                    'yiq':'YIQ', 
-                                    'lab':'CIElab'})),
-            ui.input_radio_buttons('kernel', 'Convolve Kernel',
-                    choices={'none':'None', 'blur':'Blur', 'edge':'Edge detection', 'sharpen':'Sharpen'}),
-            ui.input_slider('gamma',"Gamma correctness",value=1, min=0, max=5,step=0.1),
-            ui.input_action_button("reset", "Reset"),
-            ui.panel_conditional("input.func === 'bc'", 
-                    ui.input_selectize("bcolor", "Background color", 
-                                       ['white', 'black', 'grey','custom']), #'transparent'
-                    ui.input_slider("threshold", "Threshold", value=10, min=0, max=20,step=0.5)
-            ),
-            ui.panel_conditional("input.bcolor === 'custom'", 
-                                 ui.input_text('custom_bc','Custom Backgound Color')),
-            ui.download_button('download', 'Export Image')
-        ),
-        ui.panel_main(
-            ui.output_text("instruction"),
-            ui.output_plot("image")
-        )
+            ui.nav("About",ui.markdown("""
+            ## Background Modifier
+
+            A simple online tool for image background manipulation including inverting the background without changing the original colors, and changing the background color.
+
+            ### Features
+
+            - **Invert Background**: Without altering the original colors, this function transforms the RGB image into different color spaces like YIQ, HSL, LAB, and inverts their corresponding channels.
+            - **Change Background Color**: By calculating the standard deviation of RGB values of each pixel in an image and using a specific threshold, this function filters out images that possibly have black or white backgrounds.
+
+            ### Usage
+
+            Visit [here](https://amsterdamstudygroup.shinyapps.io/invertimage/) to use the tool online.
+            """
+            )),title="EZreverse",
+            )
     )
-)
+
 
 def server(input, output, session):
 
@@ -73,16 +112,17 @@ def server(input, output, session):
             # label=f"Gamma correctness. Current value: {1}",
             value=1,
         )
-
+    '''
     @reactive.Effect
     def _():
         if input.cspace() == 'lab':
             ui.update_radio_buttons("kernel",choices = {'none':'None'})
-        elif input.bcspace() == 'rgb' and input.func() == 'bc' or input.cspace() == 'hls':
+        elif input.func() == 'bc' or input.cspace() == 'hls':
             ui.update_radio_buttons("kernel",choices = {'none':'None','blur':'Blur'})
         else:
             ui.update_radio_buttons("kernel",
                     choices = {'none':'None','blur':'Blur', 'edge':'Edge detection', 'sharpen':'Sharpen'})
+    '''
 
     @reactive.Effect
     def _():
@@ -99,7 +139,7 @@ def server(input, output, session):
         elif input.bcolor() == 'custom' and input.custom_bc() == '':
             return 'Please enter color'
         else:
-            pass
+            return f'Reversed image:'
 
     @reactive.Calc
     def upload():
@@ -109,8 +149,7 @@ def server(input, output, session):
         return img
     
     @reactive.Calc
-    def invert():
-        global image_data
+    def upload():
         if input.demos() == 'demo1' or input.demos() == 'demo2':
             path = f'demo_input/{input.demos()}.png'
             image_data = np.array(io.imread(path))
@@ -119,6 +158,11 @@ def server(input, output, session):
             image_data = np.array(img)
 
         image_data = image_data[:, :, :3]
+        return image_data
+    
+    @reactive.Calc
+    def invert():
+        image_data = upload()
 
         if input.kernel() != 'none':
             image_data_kernel = apply_kernel(image_data, input.kernel())
@@ -142,10 +186,9 @@ def server(input, output, session):
         print('run one time')
         return negative_image
 
-
     @output
     @render.image
-    async def image() -> ImgData:
+    def image() -> ImgData:
         if input.bcolor() == 'custom' and not input.custom_bc():
             return
         if input.file() or input.demos() != 'upload':
@@ -154,21 +197,23 @@ def server(input, output, session):
             return
 
         negative_image = exposure.adjust_gamma(ensure_non_negative(negative_image), gamma=input.gamma())
-
-        # Save for render.image
         
         if not os.path.exists("test_results"):
             os.makedirs("test_results")
         io.imsave("test_results/inverted.png", util.img_as_ubyte(negative_image))
         negative_image = io.imread('test_results/inverted.png')
-        # concatenated_image = cv2.hconcat([image_data,negative_image]) 
-        height1, width1 = image_data.shape[:2]
-        height2, width2 = negative_image.shape[:2]
-        new_image_np = np.zeros((max(height1, height2), width1 + width2, 3), dtype=np.uint8)
-        new_image_np[:height1, :width1] = image_data[:,:,:3]
-        new_image_np[:height2, width1:] = negative_image
-        io.imsave("test_results/combin-inverted.png", util.img_as_ubyte(new_image_np))
-        return {"src": "test_results/combin-inverted.png", "width": "100%"}
+        return {"src": 'test_results/inverted.png',"width": "100%"} #"width": "100%"
+    @output
+    @render.text
+    def instruori():
+        return 'Original image:'
+    
+    @output
+    @render.image
+    def ori():
+        image_data = upload()
+        io.imsave("test_results/ori.png", util.img_as_ubyte(image_data))
+        return {"src": "test_results/ori.png","width": "100%"} #, "width": "100%"
 
     @session.download(
         filename=f"InvertImage.png"
@@ -186,7 +231,7 @@ def server(input, output, session):
         yield img_byte_array.getvalue()
         
     
-
-app = App(app_ui, server)
+www_dir = Path(__file__).parent / "www"
+app = App(app_ui, server, static_assets=www_dir)
 
 
