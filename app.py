@@ -206,7 +206,13 @@ def server(input, output, session):
     @output
     @render.text
     def instruori():
-        return 'Original image:'
+        if input.demos() == 'upload' and not input.file():
+            return "Please upload image"
+        elif input.bcolor() == 'custom' and input.custom_bc() == '':
+            return 'Please enter color'
+        else:
+            return 'Original image:'
+        
     
     @output
     @render.image
