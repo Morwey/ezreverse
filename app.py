@@ -29,6 +29,7 @@ def ensure_non_negative(image):
     return exposure.rescale_intensity(image, out_range=(0, 1))
 
 app_ui = ui.page_fluid(
+    ui.head_content(ui.include_js("custom.js")),
     ui.tags.style(
         """
         .app-col {
