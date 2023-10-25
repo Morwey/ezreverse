@@ -5,8 +5,6 @@ def cs_rgb_to_hls(r, g, b):
     maxc = max(r, g, b)
     minc = min(r, g, b)
     sumc = (maxc+minc)
-    if abs(sumc) < 1e-10:
-        return 0,0,0
     rangec = (maxc-minc)
     l = sumc/2.0
     if minc == maxc:

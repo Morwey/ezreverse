@@ -41,7 +41,7 @@ app_ui = ui.page_fluid(
         }
         """
     ),
-    ui.img(src="logo.png", style="width: 13%;"),
+    ui.img(src="logo_color.png", style="width: 13%;"),
     ui.page_navbar(
         shinyswatch.theme.journal(),
         ui.nav('App',
@@ -52,8 +52,8 @@ app_ui = ui.page_fluid(
                     ui.panel_conditional("input.demos === 'upload'", 
                             ui.input_file("file", "Choose a file to upload:", multiple=True),
                     ),
-                    ui.input_radio_buttons('func', 'Functions',
-                            choices = {"invert": "Invert", "bc": "Bacground color change"}),
+                    ui.input_radio_buttons('func', 'Actions',
+                            choices = {"invert": "Invert background", "bc": "replace background color"}),
                     ui.panel_conditional("input.func === 'invert'", 
                         ui.input_radio_buttons("cspace", "Color space",choices=
                                         {'hls':'HLS',
@@ -62,7 +62,7 @@ app_ui = ui.page_fluid(
                                             'rgb':'RGB'})),
                     ui.input_radio_buttons('kernel', 'Convolve Kernel',
                             choices={'none':'None', 'blur':'Blur', 'edge':'Edge detection', 'sharpen':'Sharpen'}),
-                    ui.input_slider('gamma',"Gamma correctness",value=1, min=0, max=5,step=0.1),
+                    ui.input_slider('gamma',"Gamma",value=1, min=0, max=5,step=0.1),
                     ui.input_action_button("reset", "Reset"),
                     ui.panel_conditional("input.func === 'bc'", 
                             ui.input_selectize("bcolor", "Background color", 
@@ -109,29 +109,9 @@ def server(input, output, session):
     @reactive.Effect
     @reactive.event(input.reset)
     def _():
-        # print('reset')
         ui.update_slider(
             "gamma",
-            # label=f"Gamma correctness. Current value: {1}",
             value=1,
-        )
-    '''
-    @reactive.Effect
-    def _():
-        if input.cspace() == 'lab':
-            ui.update_radio_buttons("kernel",choices = {'none':'None'})
-        elif input.func() == 'bc' or input.cspace() == 'hls':
-            ui.update_radio_buttons("kernel",choices = {'none':'None','blur':'Blur'})
-        else:
-            ui.update_radio_buttons("kernel",
-                    choices = {'none':'None','blur':'Blur', 'edge':'Edge detection', 'sharpen':'Sharpen'})
-    '''
-
-    @reactive.Effect
-    def _():
-        ui.update_slider(
-            "gamma",
-            label=f"Gamma correctness. Current value: {input.gamma()}",
         )
 
     @output
@@ -173,6 +153,10 @@ def server(input, output, session):
             image_data_kernel = apply_kernel(image_data, input.kernel())
         else:
             image_data_kernel = image_data.copy()
+
+        image_data_kernel = np.clip(image_data_kernel, 0, 255)
+        io.imsave("test_results/kernel.png", util.img_as_ubyte(image_data_kernel/ 255.0))
+        image_data_kernel = np.array(io.imread("test_results/kernel.png"))
 
         if input.func() == 'invert':
             conversion_func = conversion_funcs.get(input.cspace(), None)
