@@ -5,5 +5,5 @@ $(document).on('shiny:value', function(event) {
         if (imgHeight) {
             $('.app-col').css('height', imgHeight + 50 + 'px');
         }
-    });  // add a slight delay to allow the new image to render
+    }); 
 });

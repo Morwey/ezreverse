@@ -148,16 +148,21 @@ def server(input, output, session):
     
     @reactive.Calc
     def invert():
+        p.set(1, message="Reading iamge")
         image_data = read()
 
         if input.kernel() != 'none':
+            p.set(2, message="Applying kernel")
             image_data_kernel = apply_kernel(image_data, input.kernel())
         else:
+            p.set(2, message="Reversing")
             image_data_kernel = image_data.copy()
 
         image_data_kernel = np.clip(image_data_kernel, 0, 255)
         io.imsave("test_results/kernel.png", util.img_as_ubyte(image_data_kernel/ 255.0))
         image_data_kernel = np.array(io.imread("test_results/kernel.png"))
+
+        p.set(3, message="Reversing")
 
         if input.func() == 'invert':
             conversion_func = conversion_funcs.get(input.cspace(), None)
@@ -179,17 +184,25 @@ def server(input, output, session):
     @output
     @render.image
     def image() -> ImgData:
-        if input.bcolor() == 'custom' and not input.custom_bc():
-            return
-        if input.file() or input.demos() != 'upload':
-            negative_image = invert()
-        else:
-            return
-
-        negative_image = exposure.adjust_gamma(ensure_non_negative(negative_image), gamma=input.gamma())
-        
-        io.imsave("test_results/inverted.png", util.img_as_ubyte(negative_image))
-        negative_image = io.imread(path_invert)
+        global p
+        with ui.Progress(min=1, max=5) as p:
+            if input.bcolor() == 'custom' and not input.custom_bc():
+                return
+            if input.file() or input.demos() != 'upload':
+                p.set(message="Reverse in progress", detail="This may take a while...")
+                negative_image = invert()
+            else:
+                return
+            
+            if input.gamma() != 1:
+                p.set(4, message="Gamma correcting")
+                negative_image = exposure.adjust_gamma(ensure_non_negative(negative_image), gamma=input.gamma())
+            else:
+                p.set(4, message="Almost done")
+            
+            io.imsave("test_results/inverted.png", util.img_as_ubyte(negative_image))
+            negative_image = io.imread(path_invert)
+            p.set(5, message="Almost done")
         return {"src": path_invert,"width": "100%"} #"width": "100%"
     
     @output
