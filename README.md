@@ -10,4 +10,5 @@ A simple online tool for image background manipulation including inverting the b
 ### Usage
 
 Visit [ezReverse](https://amsterdamstudygroup.shinyapps.io/invertimage/) to use the tool online.
+
 Visit [Deployment Protocol](https://github.com/Morwey/ezreverse/blob/main/PythonShinyDeployment.md) to Deploy your Python shiny app easily.
