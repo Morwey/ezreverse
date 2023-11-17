@@ -12,6 +12,7 @@ from io import BytesIO
 from modules.convolve import apply_kernel
 import matplotlib.pyplot as plt
 from modules.invert import *
+from modules.spin import rotate_rgb
 from htmltools import Tag
 from pathlib import Path
 import shinyswatch
@@ -42,36 +43,43 @@ app_ui = ui.page_fluid(
         }
         """
     ),
-    ui.img(src="logo_color.png", style="width: 13%;"),
     ui.page_navbar(
         shinyswatch.theme.journal(),
         ui.nav('App',
             ui.layout_sidebar(
                 ui.panel_sidebar(
-                    ui.input_radio_buttons('demos', 'Examples',
-                            choices = {"demo1": "Example1", "demo2": "Example2", "upload": "Upload image"}),
+                    ui.input_radio_buttons('demos', 'Data',
+                            choices = {"demo1": "Example: Cells",
+                                        "demo2": "Example: Graph", 
+                                        "demo3": "Example: Synthetic data", 
+                                        "upload": "Upload image"}),
                     ui.panel_conditional("input.demos === 'upload'", 
                             ui.input_file("file", "Choose a file to upload:", multiple=True),
                     ),
-                    ui.input_radio_buttons('func', 'Actions',
-                            choices = {"invert": "Invert background", "bc": "replace background color"}),
+                    ui.input_radio_buttons('func', 'Action',
+                            choices = {"invert": "Invert background", "bc": "Replace background color"}),
                     ui.panel_conditional("input.func === 'invert'", 
                         ui.input_radio_buttons("cspace", "Color space",choices=
-                                        {'hls':'HLS',
+                                        {'hls':'HSL',
                                             'yiq':'YIQ', 
                                             'lab':'CIElab',
                                             'rgb':'RGB'})),
-                    ui.input_radio_buttons('kernel', 'Convolve Kernel',
-                            choices={'none':'None', 'blur':'Blur', 'edge':'Edge detection', 'sharpen':'Sharpen'}),
-                    ui.input_slider('gamma',"Gamma",value=1, min=0, max=5,step=0.1),
-                    ui.input_action_button("reset", "Reset"),
+                    # ui.input_slider('gamma',"Gamma", value=1, min=0, max=10,step=0.1),
+                    ui.input_numeric('gamma',"Gamma", value=1, min=0, max=10,step=0.1),
+                    ui.input_slider('spin',"Color rotation",value=0, min=-180, max=180,step=1),
                     ui.panel_conditional("input.func === 'bc'", 
                             ui.input_selectize("bcolor", "Background color", 
-                                            ['white', 'black', 'grey','custom']), #'transparent'
+                                            ['Reverse','white', 'black', 'grey','custom']), #'transparent'
                             ui.input_slider("threshold", "Threshold", value=10, min=0, max=20,step=0.5)
                     ),
                     ui.panel_conditional("input.bcolor === 'custom'", 
-                                        ui.input_text('custom_bc','Custom Backgound Color')),
+                                        ui.input_text('custom_bc','Custom Background Color',placeholder="Hexadecimal RGB Color, e.g., #11FF33")),
+                    ui.input_radio_buttons(
+                            "kernel",
+                            "Filter",
+                            {'none':'None', 'blur':'Blur', 'edge':'Edge detection', 'sharpen':'Sharpen'},
+                        ),
+                    ui.input_action_button("resetcolor", "Reset"),
                 ),
                 ui.panel_main(
                     ui.download_button('download', 'Export Image'),
@@ -85,22 +93,25 @@ app_ui = ui.page_fluid(
                                 ))
                 )
             ),
-            ui.nav("About",ui.markdown("""
-            ## Background Modifier
-
-            A simple online tool for image background manipulation including inverting the background without changing the original colors, and changing the background color.
-
-            ### Features
-
-            - **Invert Background**: Without altering the original colors, this function transforms the RGB image into different color spaces like YIQ, HSL, LAB, and inverts their corresponding channels.
-            - **Change Background Color**: By calculating the standard deviation of RGB values of each pixel in an image and using a specific threshold, this function filters out images that possibly have black or white backgrounds.
-
-            ### Usage
-
-            Visit [here](https://amsterdamstudygroup.shinyapps.io/invertimage/) to use the tool online.
+            ui.nav("About",ui.img(src="logo_color.png", style="width: 13%;"),
+            ui.markdown("""
+            ### EZreverse - Efficient and Robust Background Modifier
+            An online tool for image background manipulation including inverting the background without changing the original colors, and changing the background color.
+                                       
+            #### Features
+            - **Invert Background**: Without altering the original colors, this function transforms the RGB image into different color spaces including HSL, YIQ, LAB, and inverts their corresponding lightness channels to invert the background, and transfrom back to RGB image.
+            - **Change Background Color**: By calculating the standard deviation of RGB values of each pixel in an image and using a specific threshold, this function filters out images with gray backgrounds and reverse/change it.
+            - EZreverse provides multiple **kernels**, including blur, edge detection, and sharpening, as well as the option to customize the **gamma** value to fine-tune saturation. 
+            
+            #### Contact                        
+            EZreverse is created and maintained by Joachim Goedhart and Xinwei Song
+            Bug reports and feature requests can be communicated in several ways:
+            Github: [EZreverse/issues](https://github.com/Morwey/ezreverse/issues)
+                                       
+            #### Source
+            The source code can be obtained [here](https://github.com/Morwey/ezreverse).                       
             """
-            )),
-            title='EZreverse'
+            )), #,title='EZreverse'
             )
     )
 
@@ -113,6 +124,22 @@ def server(input, output, session):
         ui.update_slider(
             "gamma",
             value=1,
+        )
+
+    @reactive.Effect
+    @reactive.event(input.resetcolor)
+    def _():
+        ui.update_slider( 
+            "spin",
+            value=0,
+        )
+        ui.update_numeric( #_slider( 
+            "gamma",
+            value=1,
+        )
+        ui.update_radio_buttons(
+            "kernel",
+            selected='none'
         )
 
     @output
@@ -136,7 +163,7 @@ def server(input, output, session):
     
     @reactive.Calc
     def read():
-        if input.demos() == 'demo1' or input.demos() == 'demo2':
+        if input.demos() == 'demo1' or input.demos() == 'demo2' or input.demos() == 'demo3':
             path = f'demo_input/{input.demos()}.png'
             image_data = np.array(io.imread(path))
         else:
@@ -168,6 +195,7 @@ def server(input, output, session):
             conversion_func = conversion_funcs.get(input.cspace(), None)
             negative_image = conversion_func(image_data_kernel)
         elif input.func() == 'bc':
+            reverse = True if input.bcolor() == 'Reverse' else None
             color_value = 'Hexadecimal RGB' if input.bcolor() == 'custom' else input.bcolor()
             custom_value = input.custom_bc() if input.bcolor() == 'custom' else None
 
@@ -176,16 +204,17 @@ def server(input, output, session):
                 color=color_value,
                 space='rgb',
                 threshold=input.threshold(),
-                custom=custom_value)
+                custom=custom_value,
+                reverse = reverse)
         
         print('run one time')
         return negative_image
-
+    
     @output
     @render.image
     def image() -> ImgData:
-        global p
-        with ui.Progress(min=1, max=5) as p:
+        global p, colortune
+        with ui.Progress(min=1, max=6) as p:
             if input.bcolor() == 'custom' and not input.custom_bc():
                 return
             if input.file() or input.demos() != 'upload':
@@ -199,6 +228,13 @@ def server(input, output, session):
                 negative_image = exposure.adjust_gamma(ensure_non_negative(negative_image), gamma=input.gamma())
             else:
                 p.set(4, message="Almost done")
+
+            io.imsave("test_results/aftergamma.png", util.img_as_ubyte(negative_image))
+
+            if input.spin() != 0:
+                p.set(5, message="Rotating color")
+                colortune = np.array(io.imread('test_results/aftergamma.png')) #negative_image.copy()
+                negative_image = rotate_rgb(colortune, input.spin())
             
             io.imsave("test_results/inverted.png", util.img_as_ubyte(negative_image))
             negative_image = io.imread(path_invert)
