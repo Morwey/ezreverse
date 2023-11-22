@@ -1,14 +1,14 @@
 ## Background Modifier
 
-A simple online tool for image background manipulation including inverting the background without changing the original colors, and changing the background color.
+An online tool for image background manipulation. TYhe main purpose is to invert background of full color images without changing the colors.
 
 ### Features
 
-- **Invert Background**: Without altering the original colors, this function transforms the RGB image into different color spaces like YIQ, HSL, LAB, and inverts their corresponding channels.
-- **Change Background Color**: By calculating the standard deviation of RGB values of each pixel in an image and using a specific threshold, this function filters out images that possibly have black or white backgrounds.
+- **Invert Background**: Without altering the original colors, this function transforms the RGB image into different color spaces like YIQ, HSL, LAB, and inverts the "lightness" component.
+- **Change Background Color**: By calculating the standard deviation of RGB values for each pixel in an image and using a specific threshold, this function selects gray values and inverts those.
 
-### Usage
+### Use
 
-Visit [ezReverse](https://amsterdamstudygroup.shinyapps.io/invertimage/) to use the tool online.
+Visit [ezReverse](https://amsterdamstudygroup.shinyapps.io/ezreverse/) to use the tool online.
 
 Visit [Deployment Protocol](https://github.com/Morwey/ezreverse/blob/main/PythonShinyDeployment.md) to Deploy your Python shiny app easily.
