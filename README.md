@@ -1,4 +1,4 @@
-## Background Modifier
+## Ezreverse
 
 An online tool for image background manipulation. TYhe main purpose is to invert background of full color images without changing the colors.
 
@@ -12,3 +12,9 @@ An online tool for image background manipulation. TYhe main purpose is to invert
 Visit [ezReverse](https://amsterdamstudygroup.shinyapps.io/ezreverse/) to use the tool online.
 
 Visit [Deployment Protocol](https://github.com/Morwey/ezreverse/blob/main/PythonShinyDeployment.md) to Deploy your Python shiny app easily.
+
+## Citation
+
+To cite this tool, please use the following reference:
+
+Ezreverse. An online tool for image background manipulation. [bioRxiv 2024](https://www.biorxiv.org/content/10.1101/2024.05.27.594095v1). doi: 10.1101/2024.05.27.594095.
