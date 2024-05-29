@@ -18,3 +18,5 @@ Visit [Deployment Protocol](https://github.com/Morwey/ezreverse/blob/main/Python
 To cite this tool, please use the following reference:
 
 Ezreverse. An online tool for image background manipulation. [bioRxiv 2024](https://www.biorxiv.org/content/10.1101/2024.05.27.594095v1). doi: 10.1101/2024.05.27.594095.
+
+Command Line version: https://github.com/Morwey/ezreverse_cli/blob/main
