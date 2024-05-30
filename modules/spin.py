@@ -10,14 +10,8 @@ def rotate_rgb(img_data, angle):
     :param angle: Rotation angle in degrees.
     :return: Rotated Image object.
     """
-    # img = Image.open(image_path)
-    # img_data = np.array(img)
-
-    # Convert the angle to radians
     angle_rad = math.radians(angle)
 
-    # Define the rotation matrix for the RGB color space
-    # This is a simple rotation around the axis. For a more complex rotation, you'd need a different matrix.
     cos_a = math.cos(angle_rad)
     sin_a = math.sin(angle_rad)
     rotation_matrix = np.array([
