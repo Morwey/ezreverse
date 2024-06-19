@@ -16,6 +16,14 @@ from modules.spin import rotate_rgb
 from htmltools import Tag
 from pathlib import Path
 import shinyswatch
+import glob
+
+
+def get_oldest_file(directory = 'tem'):
+    files = glob.glob(os.path.join(directory, '*'))
+
+    oldest_file = min(files, key=os.path.getmtime)
+    return os.path.basename(oldest_file)
 
 conversion_funcs = {
     'rgb': util.invert,
@@ -157,26 +165,27 @@ def server(input, output, session):
         global path
         file_infos = input.file()
         path = file_infos[0]["datapath"]
-        img = Image.open(path)
-        print('upload one time')
-        return img
+        return path
     
     @reactive.Calc
     def read():
-        if input.demos() == 'demo1' or input.demos() == 'demo2' or input.demos() == 'demo3':
+        if input.demos() != 'upload':
             path = f'demo_input/{input.demos()}.png'
-            image_data = np.array(io.imread(path))
-        else:
-            img = up()
-            image_data = np.array(img)
-
-        image_data = image_data[:, :, :3]
-        return image_data
+        elif input.file():
+            path = up()
+        return path
     
     @reactive.Calc
     def invert():
         p.set(1, message="Reading iamge")
-        image_data = read()
+        try:
+            image_data = np.array(io.imread(read()))
+            image_data = image_data[:, :, :3]
+            
+            if len(image_data.shape) != 3 or image_data.shape[2] != 3 or image_data.size == 0:
+                raise ValueError("Only three-channel images (e.g., PNG, JPEG) are supported.")
+        except Exception as e:
+            raise ValueError("Only three-channel images (e.g., PNG, JPEG) are supported.") from e
 
         if input.kernel() != 'none':
             p.set(2, message="Applying kernel")
@@ -185,9 +194,7 @@ def server(input, output, session):
             p.set(2, message="Reversing")
             image_data_kernel = image_data.copy()
 
-        image_data_kernel = np.clip(image_data_kernel, 0, 255)
-        io.imsave("test_results/kernel.png", util.img_as_ubyte(image_data_kernel/ 255.0))
-        image_data_kernel = np.array(io.imread("test_results/kernel.png"))
+        image_data_kernel = util.img_as_ubyte(np.clip(image_data_kernel, 0, 255)/255)
 
         p.set(3, message="Reversing")
 
@@ -213,7 +220,7 @@ def server(input, output, session):
     @output
     @render.image
     def image() -> ImgData:
-        global p, colortune
+        global p, colortune, file_path
         with ui.Progress(min=1, max=6) as p:
             if input.bcolor() == 'custom' and not input.custom_bc():
                 return
@@ -229,17 +236,18 @@ def server(input, output, session):
             else:
                 p.set(4, message="Almost done")
 
-            io.imsave("test_results/aftergamma.png", util.img_as_ubyte(negative_image))
+            negative_image = util.img_as_ubyte(np.clip(negative_image, 0, 255))
 
             if input.spin() != 0:
                 p.set(5, message="Rotating color")
-                colortune = np.array(io.imread('test_results/aftergamma.png')) #negative_image.copy()
+                colortune = negative_image.copy()
                 negative_image = rotate_rgb(colortune, input.spin())
             
-            io.imsave("test_results/inverted.png", util.img_as_ubyte(negative_image))
-            negative_image = io.imread(path_invert)
+            file_path = f'tem/{get_oldest_file()}'
+            io.imsave(file_path, util.img_as_ubyte(negative_image))
+
             p.set(5, message="Almost done")
-        return {"src": path_invert,"width": "100%"} #"width": "100%"
+        return {"src": file_path,"width": "100%"} #"width": "100%"
     
     @output
     @render.text
@@ -254,22 +262,22 @@ def server(input, output, session):
     @output
     @render.image
     def ori():
+        file: list[FileInfo] | None = input.file()
         if input.bcolor() == 'custom' and not input.custom_bc():
             return
-        if input.file() or input.demos() != 'upload':
-            image_data = read()
+        if input.demos() != 'upload' or input.file():
+            path = read()
         else:
             return
         with reactive.isolate():
-            io.imsave(path_ori, util.img_as_ubyte(image_data))
-        return {"src": path_ori,"width": "100%"} #, "width": "100%"
+            return {"src": path,"width": "100%"} #, "width": "100%"
 
     @session.download(
         filename=f"InvertImage.png"
     )
     async def download():
         await asyncio.sleep(0.25)
-        file_path = "test_results/inverted.png"
+        # file_path = "test_results/inverted.png"
         img = io.imread(file_path)
         pil_img = Image.fromarray(img.astype(np.uint8))
     
