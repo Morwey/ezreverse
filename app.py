@@ -178,7 +178,14 @@ def server(input, output, session):
     @reactive.Calc
     def invert():
         p.set(1, message="Reading iamge")
-        image_data = np.array(io.imread(read()))
+        try:
+            image_data = np.array(io.imread(read()))
+            image_data = image_data[:, :, :3]
+            
+            if len(image_data.shape) != 3 or image_data.shape[2] != 3 or image_data.size == 0:
+                raise ValueError("Only three-channel images (e.g., PNG, JPEG) are supported.")
+        except Exception as e:
+            raise ValueError("Only three-channel images (e.g., PNG, JPEG) are supported.") from e
 
         if input.kernel() != 'none':
             p.set(2, message="Applying kernel")
