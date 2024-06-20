@@ -16,14 +16,6 @@ from modules.spin import rotate_rgb
 from htmltools import Tag
 from pathlib import Path
 import shinyswatch
-import glob
-
-
-def get_oldest_file(directory = 'tem'):
-    files = glob.glob(os.path.join(directory, '*'))
-
-    oldest_file = min(files, key=os.path.getmtime)
-    return os.path.basename(oldest_file)
 
 conversion_funcs = {
     'rgb': util.invert,
@@ -218,7 +210,7 @@ def server(input, output, session):
         return negative_image
     
     @output
-    @render.image
+    @render.plot
     def image() -> ImgData:
         global p, colortune, file_path
         with ui.Progress(min=1, max=6) as p:
@@ -242,13 +234,16 @@ def server(input, output, session):
                 p.set(5, message="Rotating color")
                 colortune = negative_image.copy()
                 negative_image = rotate_rgb(colortune, input.spin())
-            
-            file_path = f'tem/{get_oldest_file()}'
-            io.imsave(file_path, util.img_as_ubyte(negative_image))
+
+            fig, ax = plt.subplots()
+            ax.imshow(negative_image)
+            ax.axis('off')
+            plt.subplots_adjust(left=0, right=1, top=1, bottom=0)  # Remove any padding
+            fig.patch.set_visible(False)
 
             p.set(5, message="Almost done")
-        return {"src": file_path,"width": "100%"} #"width": "100%"
-    
+        return fig
+
     @output
     @render.text
     def instruori():
@@ -260,7 +255,7 @@ def server(input, output, session):
             return 'Original image:'
         
     @output
-    @render.image
+    @render.plot
     def ori():
         file: list[FileInfo] | None = input.file()
         if input.bcolor() == 'custom' and not input.custom_bc():
@@ -270,7 +265,16 @@ def server(input, output, session):
         else:
             return
         with reactive.isolate():
-            return {"src": path,"width": "100%"} #, "width": "100%"
+            try:
+                image_data = np.array(io.imread(path))
+                fig, ax = plt.subplots()
+                ax.imshow(image_data)
+                ax.axis('off')
+                plt.subplots_adjust(left=0, right=1, top=1, bottom=0)  # Remove any padding
+                fig.patch.set_visible(False)
+                return fig
+            except Exception as e:
+                raise ValueError("Only three-channel images (e.g., PNG, JPEG) are supported.") from e
 
     @session.download(
         filename=f"InvertImage.png"
