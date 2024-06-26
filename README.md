@@ -1,4 +1,4 @@
-## Ezreverse
+## ezReverse
 
 An online tool for image background manipulation. The main purpose is to invert background of full color images without changing the colors.
 
