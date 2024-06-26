@@ -169,16 +169,17 @@ def server(input, output, session):
     
     @reactive.Calc
     def invert():
+        global original_width, original_height
         p.set(1, message="Reading iamge")
         try:
             image_data = np.array(io.imread(read()))
             image_data = image_data[:, :, :3]
+            original_width, original_height,_ = image_data.shape
             
             if len(image_data.shape) != 3 or image_data.shape[2] != 3 or image_data.size == 0:
                 raise ValueError("Only three-channel images (e.g., PNG, JPEG) are supported.")
         except Exception as e:
             raise ValueError("Only three-channel images (e.g., PNG, JPEG) are supported.") from e
-
         if input.kernel() != 'none':
             p.set(2, message="Applying kernel")
             image_data_kernel = apply_kernel(image_data, input.kernel())
@@ -212,7 +213,7 @@ def server(input, output, session):
     @output
     @render.plot
     def image() -> ImgData:
-        global p, colortune, file_path
+        global p, colortune, file_path, invertfig
         with ui.Progress(min=1, max=6) as p:
             if input.bcolor() == 'custom' and not input.custom_bc():
                 return
@@ -234,15 +235,18 @@ def server(input, output, session):
                 p.set(5, message="Rotating color")
                 colortune = negative_image.copy()
                 negative_image = rotate_rgb(colortune, input.spin())
-
-            fig, ax = plt.subplots()
+            
+            dpi = 100
+            figsize = (original_width / dpi, original_height / dpi)
+            # print(figsize)
+            invertfig, ax = plt.subplots(figsize=figsize, dpi=dpi)
             ax.imshow(negative_image)
             ax.axis('off')
             plt.subplots_adjust(left=0, right=1, top=1, bottom=0)  # Remove any padding
-            fig.patch.set_visible(False)
-
+            invertfig.patch.set_visible(False)
+    
             p.set(5, message="Almost done")
-        return fig
+        return invertfig
 
     @output
     @render.text
@@ -281,15 +285,13 @@ def server(input, output, session):
     )
     async def download():
         await asyncio.sleep(0.25)
-        # file_path = "test_results/inverted.png"
-        img = io.imread(file_path)
-        pil_img = Image.fromarray(img.astype(np.uint8))
     
         img_byte_array = BytesIO()
-        pil_img.save(img_byte_array, format='PNG')
+        invertfig.savefig(img_byte_array, format='PNG', dpi=100, bbox_inches='tight', pad_inches=0)
         
         # Return byte stream
         yield img_byte_array.getvalue()
+
         
     
 www_dir = Path(__file__).parent / "www"
