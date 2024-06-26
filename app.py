@@ -287,7 +287,7 @@ def server(input, output, session):
         await asyncio.sleep(0.25)
     
         img_byte_array = BytesIO()
-        invertfig.savefig(img_byte_array, format='PNG', dpi=100, bbox_inches='tight', pad_inches=0)
+        invertfig.savefig(img_byte_array, format='PNG', dpi=500, bbox_inches='tight', pad_inches=0)
         
         # Return byte stream
         yield img_byte_array.getvalue()
