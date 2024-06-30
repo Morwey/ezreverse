@@ -22,6 +22,12 @@ Ezreverse. An online tool for image background manipulation. [bioRxiv 2024](http
 
 
 > Web app: [ezReverse web app](https://amsterdamstudygroup.shinyapps.io/ezreverse/)
-Manuscript: [bioRxiv 2024](https://www.biorxiv.org/content/10.1101/2024.05.27.594095v1)
-Original project: ：[ezReverse github](https://github.com/Morwey/ezreverse)
-CLI project: [ezReverse CLI](https://github.com/Morwey/ezreverse_cli)
+
+ 
+> Manuscript: [bioRxiv 2024](https://www.biorxiv.org/content/10.1101/2024.05.27.594095v1)
+
+
+> Original project: [ezReverse github](https://github.com/Morwey/ezreverse)
+
+
+>CLI project: [ezReverse CLI](https://github.com/Morwey/ezreverse_cli)
